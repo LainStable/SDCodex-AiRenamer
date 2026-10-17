@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>AI Renamer</title>
+  <style>
+    :root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#e8eaf2;background:#0f131c;font-synthesis:none;--surface:#161c27;--surface2:#1b2230;--line:#2b3444;--muted:#8993a5;--primary:#6366f1;--good:#34d399;--warn:#fbbf24;--danger:#fb7185}
+    *{box-sizing:border-box}body{margin:0;background:#0f131c;color:#e8eaf2;font-size:13px}button,input,select,textarea{font:inherit;color:inherit}button{cursor:pointer;border:1px solid var(--line);background:#202838;border-radius:5px;padding:8px 11px}button:hover{border-color:#6672ee;background:#29334a}button:disabled{opacity:.45;cursor:not-allowed}input,select,textarea{width:100%;border:1px solid var(--line);border-radius:5px;background:#101620;padding:9px 10px;outline:none}input:focus,select:focus,textarea:focus{border-color:var(--primary)}textarea{resize:vertical;min-height:82px}.shell{max-width:1800px;margin:0 auto;padding:18px;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px}.workspace,.parameters{min-width:0}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:15px}.brand{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700}.brand-mark{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:white;background:linear-gradient(135deg,#6366f1,#8b5cf6);font-size:18px}.status{border:1px solid #17664f;border-radius:4px;color:#6ee7b7;padding:5px 9px;font:11px ui-monospace,monospace}.toolbar,.pathbar,.filters,.batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pathbar{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:8px;margin-bottom:10px}.pathbar input{flex:1;min-width:180px}.path-label,.subtle{color:var(--muted)}.filters{justify-content:space-between;margin:12px 0}.filter-left,.filter-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.check{display:flex;align-items:center;gap:7px;color:#c4cad5}.check input{width:auto;accent-color:var(--primary)}.metric{color:#cbd2df;font:12px ui-monospace,monospace}.metric b{color:#a5b4fc}.batchbar{background:var(--surface);padding:9px;border:1px solid var(--line);border-radius:7px;margin-bottom:12px}.primary{background:var(--primary);border-color:var(--primary);color:white;font-weight:650}.primary:hover{background:#5558e6}.accent{color:#a5b4fc}.warning{color:var(--warn)}.danger{color:var(--danger)}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:10px;min-width:0}.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}.card-title{font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.card-info{color:var(--muted);font-size:11px;margin-top:3px}.thumb{height:160px;border-radius:5px;background:#0a0e15;overflow:hidden;position:relative;display:grid;place-items:center;margin-bottom:8px}.thumb img{width:100%;height:100%;object-fit:cover}.type-label{position:absolute;left:8px;bottom:8px;background:#080d16dc;border:1px solid #3d4758;border-radius:3px;padding:3px 6px;color:#d6dae4;font-size:10px;text-transform:uppercase}.state{font-size:10px;padding:3px 6px;border-radius:3px;background:#263145;color:#c4cad5}.state.ready{color:#6ee7b7;background:#11392f}.state.error{color:#fda4af;background:#48242c}.rename-row{display:grid;grid-template-columns:1fr auto;gap:7px;margin-top:7px}.rename-row input{min-width:0}.original{color:#8d98aa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:11px ui-monospace,monospace}.card-error{color:#fda4af;font-size:11px;margin-top:8px;line-height:1.4}.empty{grid-column:1/-1;border:1px dashed #344055;border-radius:7px;color:var(--muted);padding:34px;text-align:center}.parameters{background:var(--surface);border:1px solid var(--line);border-radius:7px;padding:14px;height:max-content;position:sticky;top:12px}.param-head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:11px;margin-bottom:12px}.param-head strong{font-size:14px}.subtitle{color:var(--muted);font:11px ui-monospace,monospace;margin-top:4px}.label{display:block;color:#aab3c2;font-size:10px;letter-spacing:.09em;text-transform:uppercase;margin:13px 0 6px}.provider-row{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}.provider-row button{padding:8px 4px;font-size:11px}.provider-row button.active{border-color:#7779ff;background:#30345d;color:#c7c9ff}.two{display:grid;grid-template-columns:1fr 1fr;gap:9px}.suffix{position:relative}.suffix input{padding-right:56px}.suffix small{position:absolute;right:9px;top:10px;color:var(--muted)}.config-actions{display:flex;gap:8px;margin-top:14px}.config-actions button{flex:1}.syntax{border-top:1px solid var(--line);padding-top:12px;margin-top:15px}.syntax-head{display:flex;justify-content:space-between;color:#aeb7c6;font-size:11px;margin-bottom:7px}.command{font:10px ui-monospace,monospace;color:#a5b4fc;background:#0a101a;border:1px solid var(--line);padding:9px;border-radius:4px;overflow-wrap:anywhere}.message{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);padding:10px 14px;border:1px solid #52617a;border-radius:5px;background:#202838;box-shadow:0 8px 36px #0009;z-index:5;max-width:min(600px,90vw)}.message[hidden]{display:none}.progress{display:flex;align-items:center;gap:10px;flex:1;min-width:170px;color:#aab3c2}.progress-track{height:5px;background:#313b4d;border-radius:5px;overflow:hidden;flex:1}.progress-track i{display:block;height:100%;width:0;background:#3bdbad;transition:width .2s}.modal{position:fixed;inset:0;background:#05080dbb;display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.open{display:flex}.modal-box{background:#171e2a;border:1px solid #354054;border-radius:8px;width:min(520px,95vw);max-height:80vh;display:flex;flex-direction:column}.modal-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}.folder-list{overflow:auto;padding:8px}.folder-row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;margin:3px 0}.footer-note{color:var(--muted);font-size:10px;margin-top:11px;line-height:1.5}
+    @media(max-width:1000px){.shell{grid-template-columns:1fr}.parameters{position:static;grid-row:1}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:620px){.shell{padding:10px}.cards{grid-template-columns:1fr}.thumb{height:210px}.topbar{align-items:flex-start}.parameters{padding:11px}.batchbar button{flex:1}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section class="workspace" aria-label="Media rename workspace">
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">✎</span><span>AI Renamer</span></div>
+        <span id="engine-status" class="status">Checking engine…</span>
+      </header>
+      <div class="path-label label" style="margin-top:0">Folder workspace</div>
+      <div class="pathbar">
+        <input id="folder-path" aria-label="Folder path" placeholder="/data/downloads">
+        <button id="change-folder" type="button">Change Folder</button>
+        <button id="scan-folder" class="primary" type="button">↻ &nbsp;Scan Folder</button>
+      </div>
+      <div class="filters">
+        <div class="filter-left">
+          <label class="check"><input id="recursive" type="checkbox" checked> Recursive Subdirs</label>
+          <span id="selection-count" class="metric">Select <b>0</b> · 0 files staged</span>
+        </div>
+        <div class="filter-right">
+          <label class="check"><input id="select-all" type="checkbox"> Select All</label>
+          <span id="files-count" class="metric">0 files</span>
+        </div>
+      </div>
+      <div class="batchbar">
+        <button id="revert" type="button" disabled>↶ &nbsp;Revert Last Batch</button>
+        <button id="dry-run" type="button" class="primary">Run Dry-Run Preview</button>
+        <button id="rename-all" type="button" class="primary" disabled>⚡ &nbsp;Batch Rename All (0)</button>
+        <div id="progress" class="progress" hidden><span id="progress-label">Analyzing…</span><span class="progress-track"><i id="progress-bar"></i></span></div>
+      </div>
+      <div id="summary" class="subtle" style="margin:0 0 10px">Choose a folder and scan it. Dry-run previews names without changing files.</div>
+      <div id="cards" class="cards"><div class="empty">Choose a folder to start staging media for AI renaming.</div></div>
+      <p class="footer-note">A dry-run never modifies files. Rename operations keep the original extension and avoid overwriting existing files. API keys are stored server-side with owner-only file permissions.</p>
+    </section>
+
+    <aside class="parameters" aria-label="AI Renamer parameters">
+      <div class="param-head"><div><strong>☷ &nbsp;ai-renamer Parameters</strong><div class="subtitle">CLI-compatible · vision engine</div></div><span class="status">Engine Ready</span></div>
+      <span class="label">AI Provider (-p, --provider)</span>
+      <div class="provider-row">
+        <button type="button" data-provider="lm-studio">LM Studio</button>
+        <button type="button" data-provider="ollama">Ollama</button>
+        <button type="button" data-provider="openai">OpenAI</button>
+      </div>
+      <label class="label" for="model">Loaded Vision Model (-m, --model)</label>
+      <div class="two"><select id="model"><option value="">Choose model…</option></select><button id="load-models" type="button">Load Models</button></div>
+      <label class="label" for="base-url">Base URL (-u, --base-url)</label>
+      <div class="two"><input id="base-url" type="url" spellcheck="false"><button id="ping" type="button">● Ping</button></div>
+      <label class="label">Case Convention (-c, --case)</label>
+      <div class="provider-row" style="grid-template-columns:1fr 1fr">
+        <button type="button" data-case="kebabCase">● kebabCase</button>
+        <button type="button" data-case="camelCase">camelCase</button>
+        <button type="button" data-case="snakeCase">snake_case</button>
+        <button type="button" data-case="pascalCase">PascalCase</button>
+      </div>
+      <div class="two">
+        <div><label class="label" for="max-chars">Max Chars (-x)</label><div class="suffix"><input id="max-chars" type="number" min="1" max="180"><small>chars</small></div></div>
+        <div><label class="label" for="frames">Video Frames (-f)</label><div class="suffix"><input id="frames" type="number" min="1" max="20"><small>frames</small></div></div>
+      </div>
+      <label class="label" for="language">Target Language (-l, --language)</label>
+      <select id="language">
+        <option>English</option><option>Turkish</option><option>Spanish</option><option>French</option><option>German</option><option>Japanese</option><option>Korean</option><option>Chinese</option><option>Portuguese</option><option>Italian</option><option>Arabic</option>
+      </select>
+      <label class="label" for="api-key">API Key (OpenAI-compatible)</label>
+      <input id="api-key" type="password" autocomplete="new-password" placeholder="Optional · leave blank to keep saved key">
+      <label class="check" style="margin-top:7px"><input id="clear-api-key" type="checkbox"> Clear saved API key</label>
+      <label class="label" for="custom-prompt">Custom AI Vision Prompt (-r)</label>
+      <textarea id="custom-prompt" placeholder="Only describe the main subject, style and prominent colors. Avoid generic terms."></textarea>
+      <div class="check" style="margin-top:10px"><label class="check"><input id="settings-recursive" type="checkbox" checked> Include Subdirectories</label></div>
+      <div class="config-actions"><button id="save-settings" class="primary" type="button">Save Settings</button></div>
+      <div class="syntax">
+        <div class="syntax-head"><span>Compiled CLI Syntax</span><button id="copy-command" type="button" style="padding:3px 7px">Copy</button></div>
+        <div id="command" class="command">ai-renamer /data/downloads --provider=ollama</div>
+      </div>
+      <p class="footer-note">The provider URL must be reachable from the SDCodex backend. For Docker, use a host/LAN address reachable from the container instead of its 127.0.0.1.</p>
+    </aside>
+  </main>
+  <div id="message" class="message" role="status" hidden></div>
+  <div id="folder-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="folder-title">
+    <div class="modal-box"><div class="modal-head"><strong id="folder-title">Choose folder</strong><button id="close-folder" type="button">Close</button></div><div id="folder-list" class="folder-list"></div></div>
+  </div>
+  <script>
+    (() => {
+      const api = "/ai-renamer/api";
+      const $ = (id) => document.getElementById(id);
+      const state = { files: [], selected: new Set(), jobId: "", undoToken: "", provider: "ollama", case: "kebabCase", pollTimer: 0 };
+      const quote = (value) => `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
+      const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      const request = async (url, options = {}) => {
+        const response = await fetch(url, { credentials: "same-origin", ...options, headers: { ...(options.body ? { "Content-Type": "application/json" } : {}), ...(options.headers || {}) } });
+        const result = response.headers.get("content-type")?.includes("application/json") ? await response.json() : {};
+        if (!response.ok || result.ok === false) throw new Error(result.error || `Request failed (${response.status})`);
+        return result;
+      };
+      let messageTimer;
+      function notify(text, error = false) {
+        $("message").textContent = text;
+        $("message").style.borderColor = error ? "#fb7185" : "#52617a";
+        $("message").hidden = false;
+        clearTimeout(messageTimer);
+        messageTimer = setTimeout(() => { $("message").hidden = true; }, 5000);
+      }
+      function queryPath(route, params = {}) {
+        const search = new URLSearchParams(params);
+        return `${api}/${route}${search.size ? `?${search}` : ""}`;
+      }
+      function currentSettings() {
+        return {
+          provider: state.provider,
+          model: $("model").value,
+          base_url: $("base-url").value.trim(),
+          case: state.case,
+          max_chars: Number($("max-chars").value || 35),
+          frames: Number($("frames").value || 5),
+          language: $("language").value,
+          custom_prompt: $("custom-prompt").value,
+          include_subdirectories: $("settings-recursive").checked,
+          api_key: $("api-key").value
+        };
+      }
+      function syncCommand() {
+        const s = currentSettings();
+        const path = $("folder-path").value || "/data/downloads";
+        const parts = ["ai-renamer", quote(path), `--provider=${s.provider}`, `--base-url=${s.base_url}`, `--case=${s.case}`, `--chars=${s.max_chars}`, `--frames=${s.frames}`, `--language=${quote(s.language)}`];
+        if (s.model) parts.push(`--model=${quote(s.model)}`);
+        if (s.custom_prompt) parts.push(`--custom-prompt=${quote(s.custom_prompt)}`);
+        if (s.include_subdirectories) parts.push("--include-subdirectories=true");
+        $("command").textContent = parts.join(" ");
+      }
+      function providerButtons() {
+        document.querySelectorAll("[data-provider]").forEach((button) => button.classList.toggle("active", button.dataset.provider === state.provider));
+      }
+      function caseButtons() {
+        document.querySelectorAll("[data-case]").forEach((button) => button.classList.toggle("active", button.dataset.case === state.case));
+      }
+      function selectedFiles() {
+        return state.files.filter((file) => state.selected.has(file.path));
+      }
+      function updateCounts() {
+        const staged = selectedFiles().length;
+        $("selection-count").innerHTML = `Select <b>${staged}</b> · ${staged} files staged`;
+        $("files-count").textContent = `${state.files.length} files total (${state.files.filter((file) => file.kind === "image").length} images, ${state.files.filter((file) => file.kind === "video").length} videos)`;
+        $("select-all").checked = state.files.length > 0 && staged === state.files.length;
+        $("select-all").indeterminate = staged > 0 && staged < state.files.length;
+        $("rename-all").textContent = `⚡  Batch Rename All (${staged})`;
+        $("rename-all").disabled = !state.jobId || staged === 0 || !selectedFiles().some((file) => file.status === "ready");
+        $("revert").disabled = !state.undoToken;
+      }
+      function renderCards() {
+        const cards = $("cards");
+        cards.replaceChildren();
+        if (!state.files.length) {
+          const empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "No supported images or videos found in this folder.";
+          cards.append(empty);
+          updateCounts();
+          return;
+        }
+        for (const file of state.files) {
+          const card = document.createElement("article");
+          card.className = "card";
+          const previewUrl = queryPath("preview", { path: file.path });
+          const extension = file.name.split(".").pop()?.toUpperCase() || "MEDIA";
+          const stem = file.name.includes(".") ? file.name.slice(0, file.name.lastIndexOf(".")) : file.name;
+          const stateLabel = file.status === "ready" ? "Ready to rename" : file.status === "renamed" ? "Renamed" : file.status === "error" ? "Error" : file.status === "pending" ? "Staged" : "Selected for rename";
+          card.innerHTML = `<div class="card-head"><label class="check" style="min-width:0"><input class="file-check" type="checkbox" ${state.selected.has(file.path) ? "checked" : ""}><span style="min-width:0"><div class="card-title">${escapeHtml(file.name)}</div><div class="card-info">${(file.size / 1048576).toFixed(1)} MB · ${extension}</div></span></label><span class="state ${file.status === "ready" || file.status === "renamed" ? "ready" : file.status === "error" ? "error" : ""}">${stateLabel}</span></div><div class="thumb"><img loading="lazy" src="${previewUrl}" alt="${escapeHtml(file.name)}" onerror="this.style.display='none'"><span class="type-label">${file.kind}</span></div><div class="original" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</div><div class="rename-row"><input class="suggestion" aria-label="Suggested filename" value="${escapeHtml(file.suggested_name || stem)}" ${file.status === "renamed" ? "disabled" : ""}><button class="rename-one" type="button" ${file.status !== "ready" ? "disabled" : ""}>Rename Now</button></div>${file.error ? `<div class="card-error">${escapeHtml(file.error)}</div>` : ""}`;
+          const check = card.querySelector(".file-check");
+          check.addEventListener("change", () => { if (check.checked) state.selected.add(file.path); else state.selected.delete(file.path); updateCounts(); });
+          card.querySelector(".suggestion").addEventListener("input", (event) => { file.suggested_name = event.target.value; });
+          card.querySelector(".rename-one").addEventListener("click", () => renameFiles([file.path]));
+          cards.append(card);
+        }
+        updateCounts();
+      }
+      async function scanFolder() {
+        const path = $("folder-path").value.trim();
+        const recursive = $("recursive").checked;
+        const result = await request(queryPath("files", { path, recursive: String(recursive) }));
+        state.root = result.root;
+        state.files = result.files.map((file) => ({ ...file, status: "selected", suggested_name: "", error: "" }));
+        state.selected = new Set(state.files.map((file) => file.path));
+        state.jobId = "";
+        $("summary").textContent = `Found ${state.files.length} supported files in ${result.root}${path && !path.startsWith("/") ? `/${path}` : ""}. Select the files to stage, then run a dry-run preview.`;
+        renderCards();
+      }
+      async function loadSettings() {
+        const settings = await request(`${api}/settings`);
+        state.provider = settings.provider;
+        state.case = settings.case;
+        $("base-url").value = settings.base_url;
+        $("max-chars").value = settings.max_chars;
+        $("frames").value = settings.frames;
+        $("language").value = settings.language;
+        $("custom-prompt").value = settings.custom_prompt;
+        $("settings-recursive").checked = settings.include_subdirectories;
+        $("recursive").checked = settings.include_subdirectories;
+        if (settings.model) $("model").innerHTML = `<option value="${escapeHtml(settings.model)}">${escapeHtml(settings.model)}</option>`;
+        $("api-key").placeholder = settings.api_key_set ? "Saved key present · leave blank to keep" : "Optional · enter a key when required";
+        providerButtons(); caseButtons(); syncCommand();
+      }
+      async function saveSettings(showMessage = true) {
+        const settings = currentSettings();
+        const saved = await request(`${api}/settings`, { method: "POST", body: JSON.stringify({ ...settings, clear_api_key: $("clear-api-key").checked }) });
+        $("api-key").value = "";
+        $("clear-api-key").checked = false;
+        $("api-key").placeholder = saved.api_key_set ? "Saved key present · leave blank to keep" : "Optional · enter a key when required";
+        syncCommand();
+        if (showMessage) notify("AI Renamer settings saved.");
+      }
+      async function loadModels() {
+        const result = await request(`${api}/models`, { method: "POST", body: JSON.stringify({ provider: state.provider, base_url: $("base-url").value.trim(), api_key: $("api-key").value }) });
+        const select = $("model");
+        const previous = select.value;
+        select.replaceChildren(new Option("Choose model…", ""));
+        result.models.forEach((name) => select.add(new Option(name, name)));
+        if (result.models.includes(previous)) select.value = previous;
+        else if (result.models.length === 1) select.value = result.models[0];
+        syncCommand();
+        return result.models;
+      }
+      async function pingProvider() {
+        const button = $("ping");
+        button.disabled = true;
+        button.textContent = "… Checking";
+        try {
+          const models = await loadModels();
+          button.textContent = `● Ping: ${models.length} models OK`;
+          notify(`Provider reachable. ${models.length} model${models.length === 1 ? "" : "s"} available.`);
+        } finally {
+          button.disabled = false;
+          if (button.textContent === "… Checking") button.textContent = "● Ping";
+        }
+      }
+      async function runDryRun() {
+        const files = selectedFiles();
+        if (!files.length) throw new Error("Select at least one file to stage.");
+        if (!$("model").value) throw new Error("Load models and choose a vision model first.");
+        $("dry-run").disabled = true;
+        try { await saveSettings(false); } catch (error) { $("dry-run").disabled = false; throw error; }
+        const result = await request(`${api}/dry-run`, { method: "POST", body: JSON.stringify({ files, settings: currentSettings() }) });
+        state.jobId = result.job_id;
+        $("progress").hidden = false;
+        $("progress-label").textContent = `Analyzing 0 / ${result.total}`;
+        $("summary").textContent = `Dry-run in progress. Files remain unchanged until you apply a rename.`;
+        pollJob();
+      }
+      async function pollJob() {
+        if (!state.jobId) return;
+        try {
+          const job = await request(`${api}/jobs/${encodeURIComponent(state.jobId)}`);
+          const ready = job.items.filter((item) => item.status === "ready").length;
+          const failed = job.items.filter((item) => item.status === "error").length;
+          $("progress-label").textContent = `Analyzing ${job.processed} / ${job.total}`;
+          $("progress-bar").style.width = `${job.total ? (job.processed / job.total) * 100 : 0}%`;
+          for (const result of job.items) {
+            const file = state.files.find((candidate) => candidate.path === result.path);
+            if (file) Object.assign(file, result);
+          }
+          renderCards();
+          if (job.status === "complete") {
+            $("progress").hidden = true;
+            $("dry-run").disabled = false;
+            $("summary").innerHTML = `<span class="accent">${ready} ready</span> · <span class="danger">${failed} failed</span> · Review the names, edit suggestions if needed, then apply.`;
+            return;
+          }
+          state.pollTimer = setTimeout(pollJob, 1100);
+        } catch (error) {
+          $("progress").hidden = true; $("dry-run").disabled = false; notify(error.message, true);
+        }
+      }
+      async function renameFiles(paths) {
+        if (!state.jobId) throw new Error("Run a dry-run preview before renaming.");
+        const job = await request(`${api}/jobs/${encodeURIComponent(state.jobId)}`);
+        const edits = new Map();
+        for (const path of paths) {
+          const file = state.files.find((item) => item.path === path);
+          const result = job.items.find((item) => item.path === path);
+          if (!file || !result || result.status !== "ready") continue;
+          const value = file.suggested_name.trim();
+          if (!value || /[\\/\\0]/.test(value) || value === "." || value === "..") throw new Error("Suggested names must be a non-empty filename without slashes.");
+          result.suggested_name = value;
+          edits.set(path, value);
+        }
+        if (!edits.size) throw new Error("There are no ready files selected to rename.");
+        const result = await request(`${api}/jobs/${encodeURIComponent(state.jobId)}/rename`, { method: "POST", body: JSON.stringify({ paths: [...edits.keys()], names: Object.fromEntries(edits) }) });
+        state.undoToken = result.undo_token;
+        localStorage.setItem("ai-renamer.undo-token", state.undoToken);
+        for (const move of result.renamed) {
+          const file = state.files.find((item) => item.path === move.old_path);
+          if (!file) continue;
+          state.selected.delete(file.path);
+          file.path = move.new_path; file.name = move.new_name; file.status = "renamed"; file.suggested_name = move.new_name.slice(0, move.new_name.lastIndexOf(".") < 0 ? undefined : move.new_name.lastIndexOf("."));
+          file.mtime_ns = 0;
+        }
+        renderCards();
+        $("summary").textContent = `Renamed ${result.renamed.length} file${result.renamed.length === 1 ? "" : "s"}. Revert Last Batch can undo this batch while the files remain in place.`;
+      }
+      async function undo() {
+        let result;
+        try {
+          result = await request(`${api}/undo`, { method: "POST", body: JSON.stringify({ undo_token: state.undoToken }) });
+        } catch (error) {
+          if (/No matching rename batch/.test(error.message)) {
+            state.undoToken = "";
+            localStorage.removeItem("ai-renamer.undo-token");
+            updateCounts();
+          }
+          throw error;
+        }
+        state.undoToken = "";
+        localStorage.removeItem("ai-renamer.undo-token");
+        notify(`Reverted ${result.reverted.length} rename${result.reverted.length === 1 ? "" : "s"}.`);
+        await scanFolder();
+      }
+      async function openFolders(path = $("folder-path").value.trim()) {
+        const result = await request(queryPath("folders", { path }));
+        state.root = result.root;
+        $("folder-path").value = [result.root, result.path].filter(Boolean).join("/");
+        const list = $("folder-list");
+        list.replaceChildren();
+        const choose = document.createElement("button");
+        choose.className = "folder-row";
+        choose.textContent = `✓ Use this folder · /${result.path}`;
+        choose.addEventListener("click", () => { $("folder-modal").classList.remove("open"); scanFolder().catch((error) => notify(error.message, true)); });
+        list.append(choose);
+        if (result.path) {
+          const parentPath = result.path.split("/").slice(0, -1).join("/");
+          const up = document.createElement("button");
+          up.className = "folder-row"; up.textContent = "↑  Parent folder";
+          up.addEventListener("click", () => openFolders(parentPath));
+          list.append(up);
+        }
+        for (const dir of result.folders) {
+          const button = document.createElement("button");
+          button.className = "folder-row"; button.textContent = `▸  ${dir.name}`;
+          button.addEventListener("click", () => openFolders(dir.path));
+          list.append(button);
+        }
+        $("folder-modal").classList.add("open");
+      }
+      function bind() {
+        $("scan-folder").addEventListener("click", () => scanFolder().catch((error) => notify(error.message, true)));
+        $("change-folder").addEventListener("click", () => openFolders().catch((error) => notify(error.message, true)));
+        $("close-folder").addEventListener("click", () => $("folder-modal").classList.remove("open"));
+        $("folder-modal").addEventListener("click", (event) => { if (event.target === $("folder-modal")) $("folder-modal").classList.remove("open"); });
+        $("select-all").addEventListener("change", () => { state.selected = $("select-all").checked ? new Set(state.files.map((file) => file.path)) : new Set(); renderCards(); });
+        $("recursive").addEventListener("change", () => { $("settings-recursive").checked = $("recursive").checked; syncCommand(); });
+        document.querySelectorAll("[data-provider]").forEach((button) => button.addEventListener("click", () => {
+          const defaults = { ollama: "http://127.0.0.1:11434", "lm-studio": "http://127.0.0.1:1234", openai: "https://api.openai.com" };
+          const oldDefault = { ollama: "http://127.0.0.1:11434", "lm-studio": "http://127.0.0.1:1234", openai: "https://api.openai.com" }[state.provider];
+          if (!$("base-url").value.trim() || $("base-url").value.trim() === oldDefault) $("base-url").value = defaults[button.dataset.provider];
+          state.provider = button.dataset.provider; providerButtons(); syncCommand();
+        }));
+        document.querySelectorAll("[data-case]").forEach((button) => button.addEventListener("click", () => { state.case = button.dataset.case; caseButtons(); syncCommand(); }));
+        $("load-models").addEventListener("click", () => loadModels().then((models) => notify(`Loaded ${models.length} models.`)).catch((error) => notify(error.message, true)));
+        $("ping").addEventListener("click", () => pingProvider().catch((error) => { $("ping").textContent = "● Ping"; notify(error.message, true); }));
+        $("save-settings").addEventListener("click", () => saveSettings().catch((error) => notify(error.message, true)));
+        $("dry-run").addEventListener("click", () => runDryRun().catch((error) => { $("dry-run").disabled = false; notify(error.message, true); }));
+        $("rename-all").addEventListener("click", () => renameFiles(selectedFiles().map((file) => file.path)).catch((error) => notify(error.message, true)));
+        $("revert").addEventListener("click", () => undo().catch((error) => notify(error.message, true)));
+        $("copy-command").addEventListener("click", () => navigator.clipboard.writeText($("command").textContent).then(() => notify("Command copied.")).catch((error) => notify(error.message, true)));
+        ["model", "base-url", "max-chars", "frames", "language", "custom-prompt", "settings-recursive"].forEach((id) => $(id).addEventListener("input", syncCommand));
+        $("settings-recursive").addEventListener("change", syncCommand);
+        $("api-key").addEventListener("input", syncCommand);
+      }
+      async function init() {
+        state.undoToken = localStorage.getItem("ai-renamer.undo-token") || "";
+        updateCounts();
+        bind();
+        try {
+          const status = await request(`${api}/status`);
+          $("engine-status").textContent = status.engine;
+          await loadSettings();
+        } catch (error) {
+          $("engine-status").textContent = "API unavailable";
+          notify(error.message, true);
+        }
+      }
+      init();
+    })();
+  </script>
+</body>
+</html>

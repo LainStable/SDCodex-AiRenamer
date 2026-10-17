@@ -1,0 +1,26 @@
+{
+  "id": "ai-renamer",
+  "name": "AI Renamer",
+  "version": "1.0.0",
+  "description": "Stage image and video files, preview AI-generated names, then safely apply or undo batch renames.",
+  "author": "LainStable",
+  "repository": "https://github.com/LainStable/SDCodex-AiRenamer",
+  "icon": "drive_file_rename_outline",
+  "nav_items": [
+    {
+      "label": "AI Renamer",
+      "icon": "drive_file_rename_outline",
+      "page": "renamer"
+    }
+  ],
+  "settings": [],
+  "volumes": [
+    {
+      "env_var": "AI_RENAMER_ROOT",
+      "host_path": "./downloads",
+      "container_path": "/data/downloads",
+      "description": "Images and videos available to stage and rename."
+    }
+  ],
+  "entrypoint": "plugin:init_plugin"
+}
