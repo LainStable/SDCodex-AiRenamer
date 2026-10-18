@@ -232,11 +232,28 @@ def _file_info(root, path):
 
 
 def _list_files(folder, recursive):
+    """List supported media under ``folder`` up to the staging cap.
+
+    Media roots in real installs hold hundreds of thousands of files, so a
+    hard error here made "Scan Folder" a dead end and every later action
+    unreachable. Stop at ``MAX_FILES_PER_JOB`` and report ``truncated``; the
+    cap still applies to how many files a single dry-run may stage.
+    """
     root, target, _ = _resolve_path(folder)
     if not os.path.isdir(target):
         raise ValueError("Choose a folder to scan.")
 
     files = []
+    truncated = False
+
+    def add(path):
+        nonlocal truncated
+        if len(files) >= MAX_FILES_PER_JOB:
+            truncated = True
+            return False
+        files.append(_file_info(root, path))
+        return True
+
     if recursive:
         for current, dirs, names in os.walk(target, followlinks=False):
             dirs[:] = sorted(
@@ -249,17 +266,15 @@ def _list_files(folder, recursive):
                 path = os.path.join(current, name)
                 if os.path.islink(path) or _media_kind(path) is None:
                     continue
-                files.append(_file_info(root, path))
-                if len(files) > MAX_FILES_PER_JOB:
-                    raise ValueError(f"Folder contains more than {MAX_FILES_PER_JOB} supported files. Narrow the folder or disable subdirectories.")
+                if not add(path):
+                    return root, files, truncated
     else:
         with os.scandir(target) as entries:
             for entry in sorted(entries, key=lambda item: item.name.casefold()):
                 if entry.is_file(follow_symlinks=False) and _media_kind(entry.name):
-                    files.append(_file_info(root, entry.path))
-                    if len(files) > MAX_FILES_PER_JOB:
-                        raise ValueError(f"Folder contains more than {MAX_FILES_PER_JOB} supported files. Narrow the folder.")
-    return root, files
+                    if not add(entry.path):
+                        return root, files, truncated
+    return root, files, truncated
 
 
 def _model_list(settings):
@@ -507,8 +522,8 @@ def folders():
 @ai_renamer_bp.get("/files")
 def files():
     try:
-        root, items = _list_files(request.args.get("path", ""), request.args.get("recursive", "true").lower() in {"1", "true", "yes"})
-        return jsonify({"ok": True, "root": root, "files": items})
+        root, items, truncated = _list_files(request.args.get("path", ""), request.args.get("recursive", "true").lower() in {"1", "true", "yes"})
+        return jsonify({"ok": True, "root": root, "files": items, "limit": MAX_FILES_PER_JOB, "truncated": truncated})
     except (ValueError, FileNotFoundError, OSError) as error:
         return jsonify({"ok": False, "error": str(error)}), 400
 

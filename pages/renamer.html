@@ -193,7 +193,10 @@
         state.files = result.files.map((file) => ({ ...file, status: "selected", suggested_name: "", error: "" }));
         state.selected = new Set(state.files.map((file) => file.path));
         state.jobId = "";
-        $("summary").textContent = `Found ${state.files.length} supported files in ${result.root}${path && !path.startsWith("/") ? `/${path}` : ""}. Select the files to stage, then run a dry-run preview.`;
+        const location = `${result.root}${path && !path.startsWith("/") ? `/${path}` : ""}`;
+        $("summary").textContent = result.truncated
+          ? `Showing the first ${state.files.length} supported files in ${location} — this folder holds more. Narrow it with Change Folder, then stage and run a dry-run preview.`
+          : `Found ${state.files.length} supported files in ${location}. Select the files to stage, then run a dry-run preview.`;
         renderCards();
       }
       async function loadSettings() {
