@@ -28,11 +28,23 @@ MAX_FILES_PER_JOB = 250
 MAX_ACTIVE_JOBS = 32
 JOB_RETENTION_SECONDS = 24 * 60 * 60
 MAX_IMAGE_BYTES = 25 * 1024 * 1024
+DURATION_PATTERN = re.compile(r"Duration:\s*(\d+):(\d\d):(\d\d(?:\.\d+)?)")
 
 _jobs = {}
 _jobs_lock = threading.Lock()
 _last_undo = None
 _undo_lock = threading.Lock()
+
+
+def _latest_job_locked():
+    """Newest dry-run job: a running one wins, otherwise the last touched.
+
+    Caller holds ``_jobs_lock``. Used by /jobs/active (page resume after
+    browsing away) and /task (core floating progress notification)."""
+    running = [job for job in _jobs.values() if job.get("status") == "running"]
+    pool = running or list(_jobs.values())
+    return max(pool, key=lambda job: job.get("updated_at", 0)) if pool else None
+
 
 DEFAULT_SETTINGS = {
     "provider": "ollama",
@@ -220,6 +232,43 @@ def _media_kind(path):
     return None
 
 
+def _video_tools():
+    """Return ``(ffmpeg, ffprobe)`` paths, preferring host binaries.
+
+    ``imageio-ffmpeg`` ships with the plugin requirements, so hosts and
+    containers without a system ffmpeg still get a bundled binary. ``ffprobe``
+    stays optional: video duration falls back to reading ffmpeg's own output.
+    """
+    ffmpeg = shutil.which("ffmpeg")
+    if not ffmpeg:
+        try:
+            import imageio_ffmpeg
+
+            ffmpeg = imageio_ffmpeg.get_ffmpeg_exe()
+        except Exception:  # optional dependency or no packaged binary
+            ffmpeg = None
+    return ffmpeg, shutil.which("ffprobe")
+
+
+def _video_duration(path, ffmpeg, ffprobe):
+    """Length of ``path`` in seconds, measured with ffprobe or ffmpeg."""
+    if ffprobe:
+        result = subprocess.run(
+            [ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return float(result.stdout.strip())
+    result = subprocess.run([ffmpeg, "-hide_banner", "-i", path], capture_output=True, text=True, timeout=30)
+    match = DURATION_PATTERN.search(result.stderr or "")
+    if match is None:
+        raise RuntimeError("Could not determine video duration.")
+    hours, minutes, seconds = match.groups()
+    return int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+
+
 def _file_info(root, path):
     stat = os.stat(path, follow_symlinks=False)
     return {
@@ -392,18 +441,13 @@ def _analyze_one(item, settings):
             video_prompt = ""
         else:
             temp_dir = tempfile.TemporaryDirectory(prefix="ai-renamer-")
-            ffmpeg = shutil.which("ffmpeg")
-            ffprobe = shutil.which("ffprobe")
-            if not ffmpeg or not ffprobe:
-                raise RuntimeError("Video renaming requires ffmpeg and ffprobe on the SDCodex host.")
-            duration_result = subprocess.run(
-                [ffprobe, "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", path],
-                check=True,
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-            duration = float(duration_result.stdout.strip())
+            ffmpeg, ffprobe = _video_tools()
+            if not ffmpeg:
+                raise RuntimeError(
+                    "Video renaming needs ffmpeg. Reinstall the plugin requirements (imageio-ffmpeg) "
+                    "or install ffmpeg on the SDCodex host."
+                )
+            duration = _video_duration(path, ffmpeg, ffprobe)
             if duration <= 0:
                 raise RuntimeError("Could not determine video duration.")
             frame_count = max(1, min(settings["frames"], int(duration) or 1))
@@ -429,18 +473,31 @@ def _analyze_one(item, settings):
 
 def _job_worker(job_id, items, settings):
     for index, item in enumerate(items):
+        with _jobs_lock:
+            job = _jobs.get(job_id)
+            if job is None:
+                return
+            job["current"] = item["name"]
+            job["updated_at"] = time.time()
         try:
             result = _analyze_one(item, settings)
         except Exception as error:
             result = {**item, "status": "error", "suggested_name": "", "error": str(error)}
         with _jobs_lock:
-            job = _jobs[job_id]
+            job = _jobs.get(job_id)
+            if job is None:
+                return
             job["items"][index] = result
             job["processed"] = index + 1
+            job["current"] = ""
             job["updated_at"] = time.time()
     with _jobs_lock:
-        job = _jobs[job_id]
+        job = _jobs.get(job_id)
+        if job is None:
+            return
         job["status"] = "complete"
+        job["current"] = ""
+        job["finished_at"] = time.time()
         job["updated_at"] = time.time()
 
 
@@ -460,7 +517,8 @@ def _new_name(path, stem):
 
 @ai_renamer_bp.get("/status")
 def status():
-    return jsonify({"ok": True, "engine": "AI Renamer · Ollama / LM Studio / OpenAI", "video_tools": bool(shutil.which("ffmpeg") and shutil.which("ffprobe"))})
+    ffmpeg, _ = _video_tools()
+    return jsonify({"ok": True, "engine": "AI Renamer · Ollama / LM Studio / OpenAI", "video_tools": bool(ffmpeg)})
 
 
 @ai_renamer_bp.get("/settings")
@@ -537,7 +595,7 @@ def preview():
             return send_file(path)
         if kind != "video":
             return jsonify({"ok": False, "error": "Unsupported media file."}), 415
-        ffmpeg = shutil.which("ffmpeg")
+        ffmpeg, _ = _video_tools()
         if not ffmpeg:
             return jsonify({"ok": False, "error": "ffmpeg is not installed."}), 501
         result = subprocess.run(
@@ -613,7 +671,10 @@ def dry_run():
                 "status": "running",
                 "processed": 0,
                 "total": len(items),
+                "current": "",
+                "folder": str(data.get("folder") or "")[:1024],
                 "items": items,
+                "started_at": time.time(),
                 "updated_at": time.time(),
                 "_case": settings["case"],
                 "_max_chars": settings["max_chars"],
@@ -637,8 +698,52 @@ def job_status(job_id):
             "status": job["status"],
             "processed": job["processed"],
             "total": job["total"],
+            "folder": job.get("folder", ""),
+            "current": job.get("current", ""),
             "items": job["items"],
             "updated_at": job["updated_at"],
+        })
+
+
+@ai_renamer_bp.get("/jobs/active")
+def active_job():
+    """Newest dry-run job so the page can pick a run back up after browsing
+    away (the analysis itself keeps running in its worker thread)."""
+    with _jobs_lock:
+        job = _latest_job_locked()
+        if not job:
+            return jsonify({"ok": True, "job": None})
+        return jsonify({
+            "ok": True,
+            "job": {
+                "id": job["id"],
+                "status": job["status"],
+                "processed": job["processed"],
+                "total": job["total"],
+                "folder": job.get("folder", ""),
+                "current": job.get("current", ""),
+                "started_at": job.get("started_at", 0),
+                "updated_at": job.get("updated_at", 0),
+            },
+        })
+
+
+@ai_renamer_bp.get("/task")
+def task_progress():
+    """Normalized progress for the core's floating task notification."""
+    with _jobs_lock:
+        job = _latest_job_locked()
+        if not job or job.get("status") != "running":
+            return jsonify({"active": False})
+        return jsonify({
+            "active": True,
+            "state": "running",
+            "label": "AI Renamer",
+            "current": job["processed"],
+            "total": job["total"],
+            "detail": job.get("current", ""),
+            "message": f"Analyzing {job['processed']} / {job['total']}",
+            "started_at": job.get("started_at", 0),
         })
 
 

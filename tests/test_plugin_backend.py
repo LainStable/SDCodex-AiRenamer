@@ -62,6 +62,53 @@ class PluginBackendTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inside the configured media root"):
             plugin_backend._resolve_path("../outside.png", must_exist=False)
 
+    def test_video_tools_prefers_host_binaries(self):
+        with patch.object(plugin_backend.shutil, "which", side_effect=lambda name: f"/usr/bin/{name}"):
+            self.assertEqual(plugin_backend._video_tools(), ("/usr/bin/ffmpeg", "/usr/bin/ffprobe"))
+
+    def test_video_tools_fall_back_to_the_bundled_ffmpeg(self):
+        bundled = types.ModuleType("imageio_ffmpeg")
+        bundled.get_ffmpeg_exe = lambda: "/pkg/imageio_ffmpeg/binaries/ffmpeg"
+        with patch.dict(sys.modules, {"imageio_ffmpeg": bundled}), patch.object(
+            plugin_backend.shutil, "which", side_effect=lambda name: "/usr/bin/ffprobe" if name == "ffprobe" else None
+        ):
+            self.assertEqual(
+                plugin_backend._video_tools(),
+                ("/pkg/imageio_ffmpeg/binaries/ffmpeg", "/usr/bin/ffprobe"),
+            )
+
+    def test_video_tools_survive_a_missing_bundled_ffmpeg(self):
+        def get_ffmpeg_exe():
+            raise RuntimeError("No ffmpeg exe could be found.")
+
+        bundled = types.ModuleType("imageio_ffmpeg")
+        bundled.get_ffmpeg_exe = get_ffmpeg_exe
+        with patch.dict(sys.modules, {"imageio_ffmpeg": bundled}), patch.object(
+            plugin_backend.shutil, "which", return_value=None
+        ):
+            self.assertEqual(plugin_backend._video_tools(), (None, None))
+
+    def test_video_duration_uses_ffprobe_when_present(self):
+        calls = []
+
+        def run(args, **kwargs):
+            calls.append(args)
+            return types.SimpleNamespace(stdout="12.5\n", stderr="")
+
+        with patch.object(plugin_backend.subprocess, "run", side_effect=run):
+            self.assertEqual(plugin_backend._video_duration("clip.mp4", "/usr/bin/ffmpeg", "/usr/bin/ffprobe"), 12.5)
+        self.assertEqual(calls[0][0], "/usr/bin/ffprobe")
+
+    def test_video_duration_falls_back_to_ffmpeg_output(self):
+        stderr = "Input #0, mov, from 'clip.mp4':\n  Duration: 00:01:02.50, start: 0.000000, bitrate: 800 kb/s\n"
+        with patch.object(plugin_backend.subprocess, "run", return_value=types.SimpleNamespace(stdout="", stderr=stderr)):
+            self.assertEqual(plugin_backend._video_duration("clip.mp4", "/usr/bin/ffmpeg", None), 62.5)
+
+    def test_video_duration_rejects_unreadable_media(self):
+        with patch.object(plugin_backend.subprocess, "run", return_value=types.SimpleNamespace(stdout="", stderr="nope")):
+            with self.assertRaisesRegex(RuntimeError, "Could not determine video duration"):
+                plugin_backend._video_duration("clip.mp4", "/usr/bin/ffmpeg", None)
+
     def test_settings_redact_api_key_and_authenticate_endpoints(self):
         saved = self.client.post("/ai-renamer/api/settings", json={
             "api_key": "private-test-key",

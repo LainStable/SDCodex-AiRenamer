@@ -28,8 +28,13 @@ For Docker installs, set the provider URL to an address reachable from the
 container. `127.0.0.1` inside a container refers to the container itself; use a
 host gateway or LAN address for a model server running elsewhere.
 
-Video analysis requires `ffmpeg` and `ffprobe` to be installed on the SDCodex
-host. Image-only use does not require them.
+Video analysis needs `ffmpeg`. The plugin requirements install
+[`imageio-ffmpeg`](https://pypi.org/project/imageio-ffmpeg/), whose wheel bundles
+an `ffmpeg` binary for Linux, macOS, and Windows, so video support works right
+after the plugin install with no extra system package and no download on first
+use. A system `ffmpeg` on `PATH` is always preferred, and `ffprobe` is optional:
+video duration falls back to reading ffmpeg's own output. Image-only use does
+not need ffmpeg at all.
 
 ## Upstream and license
 
