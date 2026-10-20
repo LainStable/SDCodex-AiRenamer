@@ -62,9 +62,13 @@ DEFAULT_SETTINGS = {
 
 @ai_renamer_bp.before_request
 def require_login():
-    from sdcodex.auth import current_user
+    try:
+        from sdcodex.auth import current_user
+    except Exception:
+        # Standalone deployment: there is no core session to enforce.
+        current_user = None
 
-    if current_user() is None:
+    if current_user is not None and current_user() is None:
         return jsonify({"ok": False, "error": "Sign in to use AI Renamer."}), 401
     if request.method == "POST" and not request.is_json:
         return jsonify({"ok": False, "error": "Expected a JSON request."}), 415
