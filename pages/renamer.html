@@ -90,11 +90,32 @@
     .message[hidden]{display:none}
     .modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(9,13,22,0.7);backdrop-filter:blur(4px)}
     .modal.open{display:flex}
-    .modal-box{display:flex;flex-direction:column;width:min(560px,95vw);max-height:80vh;overflow:hidden;border:1px solid var(--line-strong);border-radius:12px;background:rgba(30,41,59,0.92);backdrop-filter:blur(16px);box-shadow:0 24px 48px -12px rgba(0,0,0,0.85)}
+    .modal-box{display:flex;flex-direction:column;width:min(660px,95vw);max-height:80vh;overflow:hidden;border:1px solid var(--line-strong);border-radius:12px;background:rgba(30,41,59,0.92);backdrop-filter:blur(16px);box-shadow:0 24px 48px -12px rgba(0,0,0,0.85)}
     .modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:14px}
     .modal-head strong{font-family:Geist,Inter,sans-serif;font-size:15px;font-weight:600}
-    .folder-list{overflow:auto;padding:8px}
-    .folder-row{display:flex;align-items:center;gap:8px;width:100%;margin:3px 0;text-align:left;font:500 12px/16px "JetBrains Mono",ui-monospace,monospace}
+    /* Gallery-style folder browser: quick-root chips, a clickable breadcrumb
+       path bar, a filter box and keyboard-navigable folder rows. */
+    .browse-roots{display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding:9px 14px}
+    .browse-roots:empty{display:none}
+    .browse-roots .chip{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid var(--line-strong);border-radius:4px;background:rgba(255,255,255,0.04);padding:4px 8px;color:var(--ink-muted);font:500 11px/16px "JetBrains Mono",ui-monospace,monospace}
+    .browse-roots .chip:hover{border-color:rgba(99,102,241,0.55);background:rgba(99,102,241,0.18);color:#fff}
+    .browse-path{display:flex;align-items:center;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);padding:7px 14px;scrollbar-width:thin}
+    .browse-path:empty{display:none}
+    .crumb{border:0;border-radius:5px;background:transparent;padding:3px 6px;color:#a5b4fc;font:600 12px/18px "JetBrains Mono",ui-monospace,monospace;white-space:nowrap}
+    .crumb:hover{background:rgba(255,255,255,0.08);color:#fff}
+    .crumb.current{color:#fff}
+    .crumb-sep{color:#64748b;padding:0 1px;font:700 13px/18px "JetBrains Mono",ui-monospace,monospace}
+    .browse-tools{display:flex;align-items:center;gap:10px;padding:10px 14px 2px}
+    .browse-tools input{flex:1;min-width:0;padding:6px 10px;font:500 12px/16px "JetBrains Mono",ui-monospace,monospace}
+    .folder-list{overflow:auto;padding:6px 8px 10px}
+    .folder-row{display:flex;align-items:center;gap:9px;width:100%;margin:2px 0;padding:8px 10px;text-align:left;border:1px solid transparent;border-radius:5px;background:transparent;color:var(--ink-muted);font:500 12px/18px "JetBrains Mono",ui-monospace,monospace;overflow-wrap:anywhere}
+    .folder-row:hover,.folder-row.active{border-color:rgba(99,102,241,0.45);background:rgba(99,102,241,0.14);color:#fff}
+    .folder-row svg{flex:0 0 auto;color:var(--ink-faint)}
+    .folder-row:hover svg,.folder-row.active svg{color:#a5b4fc}
+    .folder-row.choose{margin-bottom:6px;border-color:rgba(99,102,241,0.4);background:rgba(99,102,241,0.16);color:#e0e7ff;font-weight:600}
+    .folder-row.up{color:var(--ink-faint)}
+    .browse-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:10px 14px}
+    .folder-error{padding:12px 10px;color:#fda4af;font:500 12px/18px "JetBrains Mono",ui-monospace,monospace}
     .footer-note{color:var(--ink-faint);font:400 11px/1.6 Inter,sans-serif;margin-top:12px}
     @media(max-width:1500px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:1000px){.shell{grid-template-columns:1fr}.parameters{position:static;grid-row:1}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -178,7 +199,20 @@
   </main>
   <div id="message" class="message" role="status" hidden></div>
   <div id="folder-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="folder-title">
-    <div class="modal-box"><div class="modal-head"><strong id="folder-title">Choose folder</strong><button id="close-folder" type="button">Close</button></div><div id="folder-list" class="folder-list"></div></div>
+    <div class="modal-box">
+      <div class="modal-head"><strong id="folder-title">Browse folders</strong><button id="close-folder" type="button">Close</button></div>
+      <div id="browse-roots" class="browse-roots"></div>
+      <div id="browse-path" class="browse-path" aria-label="Folder path"></div>
+      <div class="browse-tools">
+        <input id="browse-filter" type="search" placeholder="Filter folders…" autocomplete="off" aria-label="Filter folders">
+        <span id="browse-count" class="metric">0 folders</span>
+      </div>
+      <div id="folder-list" class="folder-list" role="listbox" aria-label="Folders"></div>
+      <div class="browse-foot">
+        <span class="metric subtle">↑↓ move · Enter open · Esc close</span>
+        <button id="cancel-folder" type="button">Cancel</button>
+      </div>
+    </div>
   </div>
   <script>
     (() => {
@@ -454,37 +488,153 @@
         notify(`Reverted ${result.reverted.length} rename${result.reverted.length === 1 ? "" : "s"}.`);
         await scanFolder();
       }
-      async function openFolders(path = $("folder-path").value.trim()) {
-        const result = await request(queryPath("folders", { path }));
-        state.root = result.root;
-        $("folder-path").value = [result.root, result.path].filter(Boolean).join("/");
+      // Gallery-style folder browser: the media root is a quick-pick chip, the
+      // path is a clickable breadcrumb bar, and folder rows support filtering
+      // plus arrow/Enter navigation.
+      const browser = { root: "", path: "", folders: [], active: 0 };
+      const ICONS = {
+        folder: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4l2 2h7A1.5 1.5 0 0 1 19 9.5v7A1.5 1.5 0 0 1 17.5 18h-13A1.5 1.5 0 0 1 3 16.5z"/></svg>',
+        up: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5m0 0-6 6m6-6 6 6"/></svg>',
+        choose: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5 9-10"/></svg>',
+      };
+      function browserRows() {
+        const query = $("browse-filter").value.trim().toLowerCase();
+        const rows = [{ kind: "choose", name: `Use this folder · ${browser.path ? `/${browser.path}` : "/"}`, icon: ICONS.choose }];
+        if (browser.path) rows.push({ kind: "up", name: "Parent folder", path: browser.path.split("/").slice(0, -1).join("/"), icon: ICONS.up });
+        for (const dir of browser.folders) {
+          if (query && !dir.name.toLowerCase().includes(query)) continue;
+          rows.push({ kind: "dir", name: dir.name, path: dir.path, icon: ICONS.folder });
+        }
+        return rows;
+      }
+      function renderBrowserRoots() {
+        const wrap = $("browse-roots");
+        wrap.replaceChildren();
+        if (!browser.root) return;
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = "chip";
+        chip.textContent = browser.root;
+        chip.title = `Media root · ${browser.root}`;
+        chip.addEventListener("click", () => openFolders(""));
+        wrap.append(chip);
+      }
+      function renderBrowserPath() {
+        const bar = $("browse-path");
+        bar.replaceChildren();
+        const rootLabel = browser.root.split(/[\\/]/).filter(Boolean).pop() || browser.root || "Root";
+        const root = document.createElement("button");
+        root.type = "button";
+        root.className = `crumb${browser.path ? "" : " current"}`;
+        root.textContent = rootLabel;
+        root.title = browser.root;
+        root.addEventListener("click", () => openFolders(""));
+        bar.append(root);
+        let running = "";
+        for (const part of browser.path.split("/").filter(Boolean)) {
+          running = running ? `${running}/${part}` : part;
+          const target = running;
+          const separator = document.createElement("span");
+          separator.className = "crumb-sep";
+          separator.textContent = "›";
+          separator.setAttribute("aria-hidden", "true");
+          const crumb = document.createElement("button");
+          crumb.type = "button";
+          crumb.className = `crumb${target === browser.path ? " current" : ""}`;
+          crumb.textContent = part;
+          crumb.addEventListener("click", () => openFolders(target));
+          bar.append(separator, crumb);
+        }
+        bar.scrollLeft = bar.scrollWidth;
+      }
+      function renderBrowserRows() {
         const list = $("folder-list");
+        const rows = browserRows();
+        if (browser.active >= rows.length) browser.active = 0;
         list.replaceChildren();
-        const choose = document.createElement("button");
-        choose.className = "folder-row";
-        choose.textContent = `✓ Use this folder · /${result.path}`;
-        choose.addEventListener("click", () => { $("folder-modal").classList.remove("open"); scanFolder().catch((error) => notify(error.message, true)); });
-        list.append(choose);
-        if (result.path) {
-          const parentPath = result.path.split("/").slice(0, -1).join("/");
-          const up = document.createElement("button");
-          up.className = "folder-row"; up.textContent = "↑  Parent folder";
-          up.addEventListener("click", () => openFolders(parentPath));
-          list.append(up);
-        }
-        for (const dir of result.folders) {
+        rows.forEach((row, index) => {
           const button = document.createElement("button");
-          button.className = "folder-row"; button.textContent = `▸  ${dir.name}`;
-          button.addEventListener("click", () => openFolders(dir.path));
+          button.type = "button";
+          button.className = `folder-row ${row.kind}${index === browser.active ? " active" : ""}`;
+          button.innerHTML = row.icon;
+          button.append(document.createTextNode(row.name));
+          button.addEventListener("click", () => activateBrowserRow(row));
           list.append(button);
-        }
+        });
+        const folders = rows.filter((row) => row.kind === "dir").length;
+        $("browse-count").textContent = `${folders} folder${folders === 1 ? "" : "s"}`;
+        const active = list.querySelector(".folder-row.active");
+        if (active) active.scrollIntoView({ block: "nearest" });
+      }
+      function activateBrowserRow(row) {
+        if (row.kind === "choose") { selectFolder(); return; }
+        openFolders(row.path).catch((error) => notify(error.message, true));
+      }
+      function selectFolder() {
+        $("folder-modal").classList.remove("open");
+        $("folder-path").value = [browser.root, browser.path].filter(Boolean).join("/");
+        scanFolder().catch((error) => notify(error.message, true));
+      }
+      function showBrowserError(message) {
+        $("browse-roots").replaceChildren();
+        $("browse-path").replaceChildren();
+        $("folder-list").replaceChildren();
+        $("browse-count").textContent = "0 folders";
+        const row = document.createElement("div");
+        row.className = "folder-error";
+        row.textContent = message;
+        $("folder-list").append(row);
         $("folder-modal").classList.add("open");
+      }
+      async function openFolders(path = $("folder-path").value.trim()) {
+        let result;
+        try {
+          result = await request(queryPath("folders", { path }));
+        } catch (error) {
+          showBrowserError(error.message);
+          return;
+        }
+        state.root = result.root;
+        browser.root = result.root;
+        browser.path = result.path;
+        browser.folders = result.folders || [];
+        browser.active = 0;
+        $("browse-filter").value = "";
+        renderBrowserRoots();
+        renderBrowserPath();
+        renderBrowserRows();
+        $("folder-modal").classList.add("open");
+        $("browse-filter").focus();
+      }
+      function browserKeydown(event) {
+        if (event.key === "Escape") { $("folder-modal").classList.remove("open"); return; }
+        const rows = browserRows();
+        if (!rows.length) return;
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+          event.preventDefault();
+          browser.active = (browser.active + (event.key === "ArrowDown" ? 1 : -1) + rows.length) % rows.length;
+          renderBrowserRows();
+        } else if (event.key === "Enter") {
+          // A focused folder row fires its own click on Enter; only the filter
+          // box (and the dialog itself) needs row activation here.
+          if (event.target instanceof Element && event.target.closest(".folder-row")) return;
+          const row = rows[browser.active];
+          if (!row) return;
+          event.preventDefault();
+          activateBrowserRow(row);
+        }
       }
       function bind() {
         $("scan-folder").addEventListener("click", () => scanFolder().catch((error) => notify(error.message, true)));
         $("change-folder").addEventListener("click", () => openFolders().catch((error) => notify(error.message, true)));
         $("close-folder").addEventListener("click", () => $("folder-modal").classList.remove("open"));
+        $("cancel-folder").addEventListener("click", () => $("folder-modal").classList.remove("open"));
         $("folder-modal").addEventListener("click", (event) => { if (event.target === $("folder-modal")) $("folder-modal").classList.remove("open"); });
+        $("folder-modal").addEventListener("keydown", browserKeydown);
+        $("browse-filter").addEventListener("input", () => {
+          browser.active = 0;
+          renderBrowserRows();
+        });
         $("select-all").addEventListener("change", () => { state.selected = $("select-all").checked ? new Set(state.files.map((file) => file.path)) : new Set(); renderCards(); });
         $("recursive").addEventListener("change", () => { $("settings-recursive").checked = $("recursive").checked; syncCommand(); });
         document.querySelectorAll("[data-provider]").forEach((button) => button.addEventListener("click", () => {
