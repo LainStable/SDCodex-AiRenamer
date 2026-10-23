@@ -100,27 +100,12 @@ def _folderframe_listing(root, target):
 
 
 def _folderframe_sources():
-    """Local disk plus one FolderFrame source per enabled Immich server.
+    """Local disk only.
 
-    Remote servers are advertised as ordinary web directories so the gallery's
-    source switcher, breadcrumbs, grid and viewer need no remote-specific code.
+    This is the renamer's own copy of the browser: it must not import the
+    Gallery plugin's Immich module, so the source switcher stays self-contained.
     """
-    sources = [{"id": "media", "label": "Local", "path": "/betarenamer/gallery/api/browse/", "discoveryMode": "directory"}]
-    try:
-        from immich_backend import enabled_servers
-
-        for row in enabled_servers():
-            base = f"/betarenamer/gallery/api/immich/{row['id']}"
-            sources.append({
-                "id": row["id"],
-                "label": row["name"],
-                "path": f"{base}/browse/",
-                "thumbnailPath": f"{base}/thumb/",
-                "discoveryMode": "directory",
-            })
-    except Exception:
-        pass
-    return sources
+    return [{"id": "media", "label": "Local", "path": "/betarenamer/gallery/api/browse/", "discoveryMode": "directory"}]
 
 
 @gallery_bp.get("/folderframe.config.json")

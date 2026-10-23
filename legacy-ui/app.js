@@ -1202,34 +1202,11 @@ function savePreferences() {
     }
 }
 
-// The Caption-this-Image button only makes sense when the captioning plugin
-// is installed, so probe its status endpoint once at startup and reveal the
-// section. A 401/404 means "not installed" and leaves it hidden.
+// This channel ships its own browser copy and does not assume a captioning
+// plugin exists, so the Caption-this-Image section stays hidden here.
 let captionCapable = false;
 async function loadCaptionCapability() {
-    const section = $('caption-this-section');
-    if (!section) return;
-    try {
-        const response = await fetch('/comfy-caption/api/status', { cache: 'no-store', credentials: 'same-origin' });
-        if (response.ok) {
-            const status = await response.json();
-            captionCapable = Boolean(status && status.ok !== false);
-        }
-    } catch (error) {
-        captionCapable = false;
-    }
-    if (!captionCapable) {
-        try {
-            const r = await fetch('/api/plugins', { cache: 'no-store', credentials: 'same-origin' });
-            if (r.ok) {
-                const list = await r.json();
-                if (Array.isArray(list) && list.some(p => p.id === 'comfy-caption' || p.id === 'caption')) {
-                    captionCapable = true;
-                }
-            }
-        } catch (e) {}
-    }
-    if (captionCapable && section) section.hidden = false;
+    captionCapable = false;
 }
 
 async function loadOptimizeCapability() {
