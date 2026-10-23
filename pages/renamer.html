@@ -112,7 +112,7 @@
       <div class="path-label label" style="margin-top:0">Folder workspace</div>
       <div class="pathbar">
         <input id="folder-path" aria-label="Folder path" placeholder="/data/downloads">
-        <button id="change-folder" type="button">Change Folder</button>
+        <button id="change-folder" type="button">Browse folders &amp; images</button>
         <button id="scan-folder" class="primary" type="button">↻ &nbsp;Scan Folder</button>
       </div>
       <div class="filters">
@@ -292,7 +292,7 @@
         localStorage.setItem("ai-renamer.folder", path);
         const location = `${result.root}${path && !path.startsWith("/") ? `/${path}` : ""}`;
         $("summary").textContent = result.truncated
-          ? `Showing the first ${state.files.length} supported files in ${location} — this folder holds more. Narrow it with Change Folder, then stage and run a dry-run preview.`
+          ? `Showing the first ${state.files.length} supported files in ${location} — this folder holds more. Browse for a narrower folder, then stage and run a dry-run preview.`
           : `Found ${state.files.length} supported files in ${location}. Select the files to stage, then run a dry-run preview.`;
         renderCards();
       }
@@ -544,6 +544,12 @@
           const saved = localStorage.getItem("ai-renamer.folder") || "";
           $("folder-path").value = saved;
           try { await scanFolder(); } catch (_) { /* root unavailable */ }
+          // Nothing staged: open the Gallery plugin's browser straight away so
+          // picking a folder is the first thing you can do, like the gallery.
+          if (!state.files.length) {
+            notify("Browse folders and images to pick where your media lives.");
+            await openFolders();
+          }
         }
       }
       init();
