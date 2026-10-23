@@ -1,8 +1,8 @@
 {
-  "id": "ai-renamer",
-  "name": "AI Renamer",
-  "version": "1.6.2",
-  "description": "Stage image and video files, preview AI-generated names, then safely apply or undo batch renames.",
+  "id": "betarenamer",
+  "name": "Beta Renamer",
+  "version": "0.1.0",
+  "description": "Beta AI Renamer with the Gallery browser built in (grid, folders and viewer). Uses the same media root as Gallery.",
   "author": "LainStable",
   "repository": "https://github.com/LainStable/SDCodex-AiRenamer",
   "icon": "drive_file_rename_outline",
@@ -11,24 +11,17 @@
   "settings": [],
   "task_status": {
     "label": "AI Renamer",
-    "path": "/ai-renamer/api/task",
+    "path": "/betarenamer/api/task",
     "page": "renamer"
   },
-  "volumes": [
-    {
-      "env_var": "AI_RENAMER_ROOT",
-      "host_path": "./downloads",
-      "container_path": "/data/downloads",
-      "description": "Images and videos available to stage and rename."
-    }
-  ],
   "entrypoint": "plugin:init_plugin",
   "assistant_actions": [
     {
       "name": "active_job",
       "description": "The current or last dry-run analysis job for the renamer, with progress and folder.",
       "method": "GET",
-      "path": "/ai-renamer/api/jobs/active"
+      "path": "/betarenamer/api/jobs/active"
     }
-  ]
+  ],
+  "branch": "beta"
 }

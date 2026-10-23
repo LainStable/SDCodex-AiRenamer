@@ -17,7 +17,7 @@ import requests
 from flask import Blueprint, current_app, jsonify, request, send_file
 from werkzeug.exceptions import HTTPException
 
-ai_renamer_bp = Blueprint("ai_renamer_bp", __name__, url_prefix="/ai-renamer/api")
+ai_renamer_bp = Blueprint("beta_renamer_bp", __name__, url_prefix="/betarenamer/api")
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
 VIDEO_EXTENSIONS = {".mp4", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".webm"}

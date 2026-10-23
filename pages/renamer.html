@@ -196,7 +196,7 @@
   </div>
   <script>
     (() => {
-      const api = "/ai-renamer/api";
+      const api = "/betarenamer/api";
       const $ = (id) => document.getElementById(id);
       const state = { files: [], selected: new Set(), jobId: "", undoToken: "", provider: "ollama", case: "kebabCase", pollTimer: 0, browseMode: "", browseRoot: "", browseTimer: 0 };
       const quote = (value) => `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
@@ -474,13 +474,13 @@
       // The footer reads the iframe's `album` URL param to know the current
       // folder; the shared picker stays as a fallback when the plugin's media
       // folder lives outside the Gallery root.
-      const GALLERY_PAGE = "/api/plugins/gallery/page/gallery";
-      const GALLERY_STATUS = "/gallery/api/status";
+      const GALLERY_PAGE = "/api/plugins/betarenamer/page/browser";
+      const GALLERY_STATUS = "/betarenamer/gallery/api/status";
       const trimPath = (value) => String(value || "").replace(/\/+$/, "");
       function pickerUrl(root) {
         const params = new URLSearchParams({ mode: "folder" });
         if (root) params.set("root", root);
-        return `/api/plugins/gallery/page/picker?${params.toString()}`;
+        return `/api/plugins/betarenamer/page/picker?${params.toString()}`;
       }
       async function galleryRoot() {
         try {

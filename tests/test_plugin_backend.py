@@ -110,7 +110,7 @@ class PluginBackendTests(unittest.TestCase):
                 plugin_backend._video_duration("clip.mp4", "/usr/bin/ffmpeg", None)
 
     def test_settings_redact_api_key_and_authenticate_endpoints(self):
-        saved = self.client.post("/ai-renamer/api/settings", json={
+        saved = self.client.post("/betarenamer/api/settings", json={
             "api_key": "private-test-key",
             "provider": "openai",
             "base_url": "https://api.openai.com",
@@ -118,12 +118,12 @@ class PluginBackendTests(unittest.TestCase):
         self.assertEqual(saved.status_code, 200, saved.get_json())
         self.assertEqual(saved.get_json()["api_key"], "")
         self.assertTrue(saved.get_json()["api_key_set"])
-        fetched = self.client.get("/ai-renamer/api/settings")
+        fetched = self.client.get("/betarenamer/api/settings")
         self.assertEqual(fetched.get_json()["api_key"], "")
         self.assertTrue(fetched.get_json()["api_key_set"])
 
         self.auth_module.current_user = lambda: None
-        denied = self.client.get("/ai-renamer/api/status")
+        denied = self.client.get("/betarenamer/api/status")
         self.assertEqual(denied.status_code, 401)
 
     def test_dry_run_apply_and_undo(self):
@@ -131,12 +131,12 @@ class PluginBackendTests(unittest.TestCase):
         with open(original, "wb") as image:
             image.write(b"image bytes")
 
-        scan = self.client.get("/ai-renamer/api/files")
+        scan = self.client.get("/betarenamer/api/files")
         self.assertEqual(scan.status_code, 200)
         staged = scan.get_json()["files"][0]
 
         with patch.object(plugin_backend, "_request_name", return_value="suggested name"):
-            response = self.client.post("/ai-renamer/api/dry-run", json={
+            response = self.client.post("/betarenamer/api/dry-run", json={
                 "files": [staged],
                 "settings": {
                     "provider": "ollama",
@@ -148,7 +148,7 @@ class PluginBackendTests(unittest.TestCase):
             self.assertEqual(response.status_code, 202, response.get_json())
             job_id = response.get_json()["job_id"]
             for _ in range(100):
-                job_response = self.client.get(f"/ai-renamer/api/jobs/{job_id}")
+                job_response = self.client.get(f"/betarenamer/api/jobs/{job_id}")
                 job = job_response.get_json()
                 if job["status"] == "complete":
                     break
@@ -156,7 +156,7 @@ class PluginBackendTests(unittest.TestCase):
             self.assertEqual(job["items"][0]["status"], "ready")
             self.assertNotIn("api_key", job)
 
-            renamed = self.client.post(f"/ai-renamer/api/jobs/{job_id}/rename", json={
+            renamed = self.client.post(f"/betarenamer/api/jobs/{job_id}/rename", json={
                 "paths": [staged["path"]],
                 "names": {staged["path"]: "Reviewed New Name"},
             })
@@ -164,7 +164,7 @@ class PluginBackendTests(unittest.TestCase):
             new_path = os.path.join(self.root, "reviewed-new-name.png")
             self.assertTrue(os.path.isfile(new_path))
 
-            undo = self.client.post("/ai-renamer/api/undo", json={
+            undo = self.client.post("/betarenamer/api/undo", json={
                 "undo_token": renamed.get_json()["undo_token"],
             })
             self.assertEqual(undo.status_code, 200, undo.get_json())
