@@ -34,6 +34,7 @@
     .workspace,.parameters{min-width:0}
     .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
     .brand{display:flex;align-items:center;gap:10px;font-family:Geist,Inter,sans-serif;font-size:20px;font-weight:600;letter-spacing:-0.01em}
+    .beta-tag{margin-left:8px;border:1px solid rgba(99,102,241,0.5);border-radius:3px;background:rgba(99,102,241,0.18);padding:2px 6px;color:#b9baff;font:600 9px/1.4 "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em}
     .brand-mark{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--primary),var(--tertiary));border:1px solid rgba(255,255,255,0.2);font-size:16px}
     .status{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(16,185,129,0.35);border-radius:3px;background:rgba(16,185,129,0.12);color:#6ee7b7;padding:4px 8px;font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
     .path-label,.label{display:block;color:var(--ink-faint);font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;margin:14px 0 6px}
@@ -110,7 +111,7 @@
   <main class="shell">
     <section class="workspace" aria-label="Media rename workspace">
       <header class="topbar">
-        <div class="brand"><span class="brand-mark" aria-hidden="true">✎</span><span>AI Renamer</span></div>
+        <div class="brand"><span class="brand-mark" aria-hidden="true">✎</span><span>Beta Renamer</span><span class="beta-tag">BETA · GALLERY BUILT IN</span></div>
         <span id="engine-status">Checking engine…</span>
       </header>
       <div class="path-label label" style="margin-top:0">Folder workspace</div>
