@@ -6,13 +6,7 @@
   "author": "LainStable",
   "repository": "https://github.com/LainStable/SDCodex-AiRenamer",
   "icon": "drive_file_rename_outline",
-  "nav_items": [
-    {
-      "label": "AI Renamer",
-      "icon": "drive_file_rename_outline",
-      "page": "renamer"
-    }
-  ],
+  "nav_items": [],
   "settings": [],
   "task_status": {
     "label": "AI Renamer",

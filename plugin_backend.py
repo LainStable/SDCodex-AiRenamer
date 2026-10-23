@@ -522,7 +522,9 @@ def _new_name(path, stem):
 @ai_renamer_bp.get("/status")
 def status():
     ffmpeg, _ = _video_tools()
-    return jsonify({"ok": True, "engine": "AI Renamer · Ollama / LM Studio / OpenAI", "video_tools": bool(ffmpeg)})
+    settings = _read_settings()
+    provider = settings.get("provider", "Ollama")
+    return jsonify({"ok": True, "engine": provider, "video_tools": bool(ffmpeg)})
 
 
 @ai_renamer_bp.get("/settings")
