@@ -92,10 +92,14 @@
     .message[hidden]{display:none}
     .modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(9,13,22,0.7);backdrop-filter:blur(4px)}
     .modal.open{display:flex}
-    .modal-box{display:flex;flex-direction:column;width:min(760px,96vw);height:min(640px,86vh);max-height:86vh;overflow:hidden;border:1px solid var(--line-strong);border-radius:12px;background:rgba(30,41,59,0.92);backdrop-filter:blur(16px);box-shadow:0 24px 48px -12px rgba(0,0,0,0.85)}
+    .modal-box{display:flex;flex-direction:column;width:min(1400px,96vw);height:min(900px,92vh);max-height:92vh;overflow:hidden;border:1px solid var(--line-strong);border-radius:12px;background:rgba(30,41,59,0.92);backdrop-filter:blur(16px);box-shadow:0 24px 48px -12px rgba(0,0,0,0.85)}
     .modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:14px}
     .modal-head strong{font-family:Geist,Inter,sans-serif;font-size:15px;font-weight:600}
     .gallery-picker{flex:1 1 auto;width:100%;min-height:0;border:0;background:#121821;display:block}
+    .modal-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:10px 14px;background:rgba(10,14,23,0.55)}
+    .modal-foot[hidden]{display:none}
+    .modal-foot .path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-faint);font:500 11px/1.5 "JetBrains Mono",ui-monospace,monospace}
+    .modal-foot button.primary{border-color:rgba(99,102,241,0.55);background:rgba(99,102,241,0.25);color:#fff}
     .footer-note{color:var(--ink-faint);font:400 11px/1.6 Inter,sans-serif;margin-top:12px}
     @media(max-width:1500px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
     @media(max-width:1000px){.shell{grid-template-columns:1fr}.parameters{position:static;grid-row:1}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -181,16 +185,20 @@
   <div id="folder-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="folder-title">
     <div class="modal-box">
       <div class="modal-head"><strong id="folder-title">Browse folders &amp; images</strong><button id="close-folder" type="button">Close</button></div>
-      <!-- Shared disk browser from the Gallery plugin (folders + live image
-           previews). It posts {type:"sdcodex:pick"} back to this page. -->
+      <!-- Full Gallery plugin browser (grid, folders, viewer) embedded so the
+           folder choice is made in the same UI as the Gallery space. -->
       <iframe id="gallery-picker" class="gallery-picker" title="Browse folders and images"></iframe>
+      <div class="modal-foot" id="gallery-foot" hidden>
+        <span class="path" id="gallery-current">Gallery</span>
+        <button id="use-folder" type="button" class="primary">Use this folder</button>
+      </div>
     </div>
   </div>
   <script>
     (() => {
       const api = "/ai-renamer/api";
       const $ = (id) => document.getElementById(id);
-      const state = { files: [], selected: new Set(), jobId: "", undoToken: "", provider: "ollama", case: "kebabCase", pollTimer: 0 };
+      const state = { files: [], selected: new Set(), jobId: "", undoToken: "", provider: "ollama", case: "kebabCase", pollTimer: 0, browseMode: "", browseRoot: "", browseTimer: 0 };
       const quote = (value) => `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
       const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
       const request = async (url, options = {}) => {
@@ -461,29 +469,74 @@
         notify(`Reverted ${result.reverted.length} rename${result.reverted.length === 1 ? "" : "s"}.`);
         await scanFolder();
       }
-      // Folder picking is delegated to the Gallery plugin's disk browser
-      // (folders + live image previews). The picker posts the chosen folder
-      // back here, so this page keeps its own staging/viewer untouched.
+      // The Gallery plugin's own page is embedded as the browser: grid, folder
+      // navigation and media viewer all behave exactly like the Gallery space.
+      // The footer reads the iframe's `album` URL param to know the current
+      // folder; the shared picker stays as a fallback when the plugin's media
+      // folder lives outside the Gallery root.
+      const GALLERY_PAGE = "/api/plugins/gallery/page/gallery";
+      const GALLERY_STATUS = "/gallery/api/status";
+      const trimPath = (value) => String(value || "").replace(/\/+$/, "");
       function pickerUrl(root) {
         const params = new URLSearchParams({ mode: "folder" });
         if (root) params.set("root", root);
         return `/api/plugins/gallery/page/picker?${params.toString()}`;
       }
+      async function galleryRoot() {
+        try {
+          const response = await fetch(GALLERY_STATUS, { cache: "no-store", credentials: "same-origin" });
+          if (!response.ok) return "";
+          const data = await response.json();
+          return trimPath(data.root);
+        } catch (_) { return ""; }
+      }
+      function galleryAlbum() {
+        try {
+          const url = new URL($("gallery-picker").contentWindow.location.href);
+          return url.searchParams.get("album") || "";
+        } catch (_) { return ""; }
+      }
+      function syncGalleryPath() {
+        if (state.browseMode !== "gallery") return;
+        const album = galleryAlbum();
+        $("gallery-current").textContent = album ? `${state.browseRoot}/${album}` : state.browseRoot;
+      }
       function closePicker() {
         $("folder-modal").classList.remove("open");
+        if (state.browseTimer) { clearInterval(state.browseTimer); state.browseTimer = 0; }
       }
       async function openFolders() {
-        // The picker needs to know the media root so its breadcrumb can go all
-        // the way up; the backend is the authority on that path.
-        let root = $("folder-path").value.trim();
+        let folder = trimPath($("folder-path").value.trim());
         try {
-          const current = await request(queryPath("folders", { path: root }));
-          root = current.root || root;
+          const current = await request(queryPath("folders", { path: $("folder-path").value.trim() }));
+          state.browseRoot = trimPath(current.root) || folder;
+          folder = folder || state.browseRoot;
         } catch (error) {
-          /* unreadable folder — the picker reports it itself */
+          state.browseRoot = folder;
         }
-        $("gallery-picker").src = pickerUrl(root);
+        const gallery = await galleryRoot();
+        const insideGallery = gallery && (folder === gallery || folder.startsWith(`${gallery}/`));
+        if (insideGallery) {
+          state.browseMode = "gallery";
+          state.browseRoot = gallery;
+          const album = folder === gallery ? "" : folder.slice(gallery.length + 1);
+          $("gallery-picker").src = `${GALLERY_PAGE}?album=${encodeURIComponent(album)}`;
+          $("gallery-foot").hidden = false;
+        } else {
+          state.browseMode = "picker";
+          $("gallery-picker").src = pickerUrl(state.browseRoot);
+          $("gallery-foot").hidden = true;
+        }
         $("folder-modal").classList.add("open");
+        if (state.browseTimer) { clearInterval(state.browseTimer); state.browseTimer = 0; }
+        if (state.browseMode === "gallery") {
+          syncGalleryPath();
+          state.browseTimer = setInterval(syncGalleryPath, 600);
+        }
+      }
+      function useGalleryFolder() {
+        if (state.browseMode !== "gallery") return;
+        applyPickedFolder({ path: state.browseRoot, relative: galleryAlbum() });
       }
       function applyPickedFolder(data) {
         const relative = String(data.relative || "").replace(/^\/+|\/+$/g, "");
@@ -495,6 +548,7 @@
       function bind() {
         $("scan-folder").addEventListener("click", () => scanFolder().catch((error) => notify(error.message, true)));
         $("change-folder").addEventListener("click", openFolders);
+        $("use-folder").addEventListener("click", useGalleryFolder);
         $("close-folder").addEventListener("click", closePicker);
         $("folder-modal").addEventListener("click", (event) => { if (event.target === $("folder-modal")) closePicker(); });
         window.addEventListener("message", (event) => {
