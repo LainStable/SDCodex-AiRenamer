@@ -1202,11 +1202,46 @@ function savePreferences() {
     }
 }
 
-// This channel ships its own browser copy and does not assume a captioning
-// plugin exists, so the Caption-this-Image section stays hidden here.
+// This channel ships its own browser copy. A captioning plugin (Beta Caption
+// or the stable ComfyCaption) is optional, so the Caption-this-Image section
+// stays hidden until one is detected.
 let captionCapable = false;
+let captionApiBase = '';
 async function loadCaptionCapability() {
-    captionCapable = false;
+    const section = $('caption-this-section');
+    if (!section) return;
+    // Prefer the Beta Caption channel, then the stable ComfyCaption plugin.
+    const candidates = ['/betacaption/api', '/comfy-caption/api'];
+    for (const base of candidates) {
+        try {
+            const response = await fetch(`${base}/status`, { cache: 'no-store', credentials: 'same-origin' });
+            if (!response.ok) continue;
+            const status = await response.json();
+            if (status && status.ok !== false) {
+                captionApiBase = base;
+                captionCapable = true;
+                break;
+            }
+        } catch (error) { /* try the next candidate */ }
+    }
+    if (!captionCapable) {
+        // Fall back to the installed-plugin list: the plugin may be present
+        // without exposing /status to this page yet.
+        try {
+            const r = await fetch('/api/plugins', { cache: 'no-store', credentials: 'same-origin' });
+            if (r.ok) {
+                const list = await r.json();
+                if (Array.isArray(list)) {
+                    const found = list.find(p => p.id === 'betacaption') || list.find(p => p.id === 'comfy-caption') || list.find(p => p.id === 'caption');
+                    if (found) {
+                        captionApiBase = found.id === 'betacaption' ? '/betacaption/api' : '/comfy-caption/api';
+                        captionCapable = true;
+                    }
+                }
+            }
+        } catch (e) {}
+    }
+    if (captionCapable && section) section.hidden = false;
 }
 
 async function loadOptimizeCapability() {
@@ -1427,6 +1462,7 @@ async function captionCurrentImage() {
     setStatus('');
 
     try {
+        if (!captionApiBase) throw new Error('No captioning plugin is available');
         // 1. Resolve this gallery file to the absolute container folder/file.
         const params = new URLSearchParams({ folder: rel.folder, file: rel.file });
         const target = await resilience.request(`/betarenamer/gallery/api/caption-target?${params}`, {
@@ -1447,7 +1483,7 @@ async function captionCurrentImage() {
                 // request API uses the same `body` key for the request body and
                 // the response mode, so a JSON request body is silently dropped
                 // (last `body: 'json'` wins) and Flask 400s on the empty body.
-                const conn = await fetch('/comfy-caption/api/check-connection', {
+                const conn = await fetch(`${captionApiBase}/check-connection`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ lmStudioUrl })
                 }).then(r => r.json().catch(() => null));
@@ -1461,7 +1497,7 @@ async function captionCurrentImage() {
         // Raw fetch (see note above): resilience.request would drop the JSON
         // body due to the `body` key collision, sending an empty body that
         // Flask rejects with a 400 Bad Request.
-        const res = await fetch('/comfy-caption/api/caption-single', {
+        const res = await fetch(`${captionApiBase}/caption-single`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 folderPath: target.folderPath,

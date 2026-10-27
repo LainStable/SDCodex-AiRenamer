@@ -100,12 +100,28 @@ def _folderframe_listing(root, target):
 
 
 def _folderframe_sources():
-    """Local disk only.
+    """Local disk plus every enabled Immich server.
 
-    This is the renamer's own copy of the browser: it must not import the
-    Gallery plugin's Immich module, so the source switcher stays self-contained.
+    This is the renamer's own copy of the browser, so it uses its vendored
+    Immich module (``betarenamer_immich_backend``) instead of the Gallery
+    plugin's, keeping the source switcher self-contained.
     """
-    return [{"id": "media", "label": "Local", "path": "/betarenamer/gallery/api/browse/", "discoveryMode": "directory"}]
+    sources = [{"id": "media", "label": "Local", "path": "/betarenamer/gallery/api/browse/", "discoveryMode": "directory"}]
+    try:
+        from betarenamer_immich_backend import enabled_servers
+
+        for row in enabled_servers():
+            base = f"/betarenamer/gallery/api/immich/{row['id']}"
+            sources.append({
+                "id": row["id"],
+                "label": row["name"],
+                "path": f"{base}/browse/",
+                "thumbnailPath": f"{base}/thumb/",
+                "discoveryMode": "directory",
+            })
+    except Exception:
+        pass
+    return sources
 
 
 @gallery_bp.get("/folderframe.config.json")
@@ -190,7 +206,7 @@ def _picker_roots(current):
         out.append({"path": os.path.abspath(path), "label": label})
 
     add(resolve_browse_root(), "Gallery")
-    add(os.environ.get("AI_RENAMER_ROOT") or "/data/downloads", "Downloads")
+    add(os.environ.get("BETARENAMER_ROOT") or os.environ.get("AI_RENAMER_ROOT") or "/data/downloads", "Downloads")
     add(os.environ.get("MODELS_DIR") or "/models", "Models")
     add(current, "Current")
     return out
@@ -336,7 +352,15 @@ def _workspace_root():
 def resolve_browse_root():
     """Resolve the configured gallery root, preferring explicit volume settings."""
     ws = _workspace_root()
-    env_root = os.environ.get("GALLERY_ROOT") or os.environ.get("GALLERY")
+    # This plugin declares its own BETARENAMER_ROOT volume so installing the
+    # beta never overwrites the stable AI Renamer's AI_RENAMER_ROOT; both, plus
+    # the Gallery roots, are honoured as fallbacks for a shared media folder.
+    env_root = (
+        os.environ.get("BETARENAMER_ROOT")
+        or os.environ.get("AI_RENAMER_ROOT")
+        or os.environ.get("GALLERY_ROOT")
+        or os.environ.get("GALLERY")
+    )
     if env_root:
         # Keep the configured target even when its mount is absent so status
         # reports the real problem instead of silently browsing another folder.

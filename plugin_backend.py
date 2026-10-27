@@ -183,7 +183,8 @@ def _write_settings(settings):
 def _browse_root():
     workspace = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     configured = (
-        os.environ.get("AI_RENAMER_ROOT")
+        os.environ.get("BETARENAMER_ROOT")
+        or os.environ.get("AI_RENAMER_ROOT")
         or os.environ.get("GALLERY_ROOT")
         or os.environ.get("GALLERY")
     )
