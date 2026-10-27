@@ -84,7 +84,9 @@ def handle_plugin_error(error):
 
 
 def _settings_file():
-    folder = os.path.join(current_app.instance_path, "plugins", "ai-renamer")
+    # This beta channel keeps its own settings folder: the stable AI Renamer
+    # plugin must not read or overwrite them.
+    folder = os.path.join(current_app.instance_path, "plugins", "betarenamer")
     os.makedirs(folder, mode=0o700, exist_ok=True)
     return os.path.join(folder, "settings.json")
 
@@ -183,8 +185,7 @@ def _write_settings(settings):
 def _browse_root():
     workspace = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     configured = (
-        os.environ.get("BETARENAMER_ROOT")
-        or os.environ.get("AI_RENAMER_ROOT")
+        os.environ.get("AI_RENAMER_ROOT")
         or os.environ.get("GALLERY_ROOT")
         or os.environ.get("GALLERY")
     )
@@ -445,7 +446,7 @@ def _analyze_one(item, settings):
             image_paths = [path]
             video_prompt = ""
         else:
-            temp_dir = tempfile.TemporaryDirectory(prefix="ai-renamer-")
+            temp_dir = tempfile.TemporaryDirectory(prefix="betarenamer-")
             ffmpeg, ffprobe = _video_tools()
             if not ffmpeg:
                 raise RuntimeError(

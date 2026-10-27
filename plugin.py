@@ -5,8 +5,6 @@ import os
 import sys
 
 plugin_dir = os.path.dirname(os.path.abspath(__file__))
-if plugin_dir not in sys.path:
-    sys.path.insert(0, plugin_dir)
 _BACKEND_NAME = "_sdcodex_betarenamer_backend"
 
 
@@ -49,15 +47,4 @@ def init_plugin(app, db, plugin_info=None):
             app.register_blueprint(gallery_bp)
     except Exception:
         app.logger.warning("Beta Renamer: vendored Gallery browser unavailable", exc_info=True)
-
-    # Remote Immich servers are proxied by this plugin so the API key stays on
-    # the server and no CORS cooperation is needed from Immich.
-    try:
-        from betarenamer_immich_backend import immich_bp
-
-        if "betarenamer_immich" not in app.blueprints:
-            app.register_blueprint(immich_bp)
-            app.logger.info("Beta Renamer Immich bridge mounted at /betarenamer/gallery/api/immich")
-    except Exception:
-        app.logger.warning("Beta Renamer: Immich bridge unavailable", exc_info=True)
     return True

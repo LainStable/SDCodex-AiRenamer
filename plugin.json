@@ -1,8 +1,8 @@
 {
   "id": "betarenamer",
   "name": "Beta Renamer",
-  "version": "0.2.0",
-  "description": "Beta AI Renamer with the Gallery browser built in (grid, folders, viewer, Immich sources and Gallery settings). Uses the same media root as Gallery.",
+  "version": "0.1.3",
+  "description": "Beta AI Renamer with the Gallery browser built in (grid, folders and viewer). Uses the same media root as Gallery.",
   "author": "LainStable",
   "repository": "https://github.com/LainStable/SDCodex-AiRenamer",
   "icon": "drive_file_rename_outline",
@@ -17,26 +17,12 @@
       "page": "browser"
     }
   ],
-  "settings": [
-    {
-      "label": "Gallery",
-      "page": "gallery",
-      "icon": "settings"
-    }
-  ],
+  "settings": [],
   "task_status": {
     "label": "AI Renamer",
     "path": "/betarenamer/api/task",
     "page": "renamer"
   },
-  "volumes": [
-    {
-      "env_var": "BETARENAMER_ROOT",
-      "host_path": "./downloads",
-      "container_path": "/data/downloads",
-      "description": "Images and videos available to stage and rename."
-    }
-  ],
   "entrypoint": "plugin:init_plugin",
   "assistant_actions": [
     {

@@ -298,7 +298,7 @@
         state.files = result.files.map((file) => ({ ...file, status: "selected", suggested_name: "", error: "" }));
         state.selected = new Set(state.files.map((file) => file.path));
         state.jobId = "";
-        localStorage.setItem("ai-renamer.folder", path);
+        localStorage.setItem("betarenamer.folder", path);
         const location = `${result.root}${path && !path.startsWith("/") ? `/${path}` : ""}`;
         $("summary").textContent = result.truncated
           ? `Showing the first ${state.files.length} supported files in ${location} — this folder holds more. Browse for a narrower folder, then stage and run a dry-run preview.`
@@ -362,7 +362,7 @@
         const folder = $("folder-path").value.trim();
         const result = await request(`${api}/dry-run`, { method: "POST", body: JSON.stringify({ files, folder, settings: currentSettings() }) });
         state.jobId = result.job_id;
-        localStorage.setItem("ai-renamer.job-folder", folder);
+        localStorage.setItem("betarenamer.job-folder", folder);
         $("progress").hidden = false;
         $("progress-label").textContent = `Analyzing 0 / ${result.total}`;
         $("summary").textContent = `Dry-run in progress. Files remain unchanged until you apply a rename. It keeps running if you browse away — a task notification tracks it.`;
@@ -399,8 +399,8 @@
         let active;
         try { active = await request(`${api}/jobs/active`); } catch (_) { return; }
         const job = active && active.job;
-        if (!job) { localStorage.removeItem("ai-renamer.job-folder"); return; }
-        const folder = job.folder || localStorage.getItem("ai-renamer.job-folder") || "";
+        if (!job) { localStorage.removeItem("betarenamer.job-folder"); return; }
+        const folder = job.folder || localStorage.getItem("betarenamer.job-folder") || "";
         let scanned = false;
         if (folder) {
           $("folder-path").value = folder;
@@ -442,7 +442,7 @@
         if (!edits.size) throw new Error("There are no ready files selected to rename.");
         const result = await request(`${api}/jobs/${encodeURIComponent(state.jobId)}/rename`, { method: "POST", body: JSON.stringify({ paths: [...edits.keys()], names: Object.fromEntries(edits) }) });
         state.undoToken = result.undo_token;
-        localStorage.setItem("ai-renamer.undo-token", state.undoToken);
+        localStorage.setItem("betarenamer.undo-token", state.undoToken);
         for (const move of result.renamed) {
           const file = state.files.find((item) => item.path === move.old_path);
           if (!file) continue;
@@ -460,13 +460,13 @@
         } catch (error) {
           if (/No matching rename batch/.test(error.message)) {
             state.undoToken = "";
-            localStorage.removeItem("ai-renamer.undo-token");
+            localStorage.removeItem("betarenamer.undo-token");
             updateCounts();
           }
           throw error;
         }
         state.undoToken = "";
-        localStorage.removeItem("ai-renamer.undo-token");
+        localStorage.removeItem("betarenamer.undo-token");
         notify(`Reverted ${result.reverted.length} rename${result.reverted.length === 1 ? "" : "s"}.`);
         await scanFolder();
       }
@@ -581,7 +581,7 @@
         $("api-key").addEventListener("input", syncCommand);
       }
       async function init() {
-        state.undoToken = localStorage.getItem("ai-renamer.undo-token") || "";
+        state.undoToken = localStorage.getItem("betarenamer.undo-token") || "";
         updateCounts();
         bind();
         try {
@@ -596,7 +596,7 @@
         // Land on the live media root (or the last folder) instead of an
         // empty staging area; the folder browser stays available via Change.
         if (!state.files.length && !state.jobId) {
-          const saved = localStorage.getItem("ai-renamer.folder") || "";
+          const saved = localStorage.getItem("betarenamer.folder") || "";
           $("folder-path").value = saved;
           try { await scanFolder(); } catch (_) { /* root unavailable */ }
           // Nothing staged: open the Gallery plugin's browser straight away so
