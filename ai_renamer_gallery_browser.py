@@ -139,7 +139,7 @@ def folderframe_browse(relpath=""):
 #  Same "browse folders and images live from disk" experience as this gallery,
 #  exposed as a small standalone page so other plugin pages can reuse it
 #  instead of growing their own picker. The page lives at
-#  /api/plugins/gallery/page/picker and posts the choice back to its parent:
+#  /api/plugins/ai-renamer/page/picker and posts the choice back to its parent:
 #      { type: "sdcodex:pick", path: "<absolute folder>", file: "<name|null>" }
 # --------------------------------------------------------------------------- #
 
