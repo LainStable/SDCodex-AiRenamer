@@ -30,16 +30,31 @@
     input:focus,select:focus,textarea:focus{border-color:var(--primary);box-shadow:0 0 0 2px rgba(99,102,241,0.25)}
     select{appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23908fa0' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
     textarea{resize:vertical;min-height:82px;line-height:1.5}
-    .shell{max-width:1800px;margin:0 auto;padding:20px;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px}
-    .workspace,.parameters{min-width:0}
-    .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+    .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 20px;border-bottom:1px solid var(--line);background:rgba(15,23,42,0.8);backdrop-filter:blur(12px)}
     .brand{display:flex;align-items:center;gap:10px;font-family:Geist,Inter,sans-serif;font-size:20px;font-weight:600;letter-spacing:-0.01em}
     .brand-mark{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--primary),var(--tertiary));border:1px solid rgba(255,255,255,0.2);font-size:16px}
     .status{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(16,185,129,0.35);border-radius:3px;background:rgba(16,185,129,0.12);color:#6ee7b7;padding:4px 8px;font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+    /* The single grid row must not grow past the viewport, or the sidebar's
+       internal scroll never engages and the browser pane is pushed off-screen. */
+    .workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);grid-template-rows:minmax(0,1fr);flex:1;min-height:0}
+    .browser-pane{min-width:0;min-height:0;display:flex;flex-direction:column;border-left:1px solid var(--line);background:var(--lowest);overflow:hidden}
+    .browser-pane iframe{width:100%;height:100%;border:0;background:var(--lowest)}
+    .sidebar-pane{min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+    .sidebar-scroll{flex:1;min-height:0;overflow-y:auto;padding:14px 20px}
+    /* The legacy .parameters card rule would otherwise keep this pane sticky at
+       content height, so it is un-carded here with two-class specificity. */
+    .parameters.sidebar-pane{position:static;height:100%;max-height:100%;border:0;border-radius:0;background:transparent;backdrop-filter:none;padding:0}
+    .parameters.sidebar-pane::before{display:none}
     .path-label,.label{display:block;color:var(--ink-faint);font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;margin:14px 0 6px}
+    .target-line{margin:0 0 14px;color:var(--ink-muted);font:500 12px/18px "JetBrains Mono",ui-monospace,monospace;word-break:break-all}
+    .target-line::before{content:"Target · ";color:var(--ink-faint)}
     .subtle{color:var(--ink-faint)}
-    .pathbar,.batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;background:rgba(15,23,42,0.8);backdrop-filter:blur(12px);padding:8px;margin-bottom:12px}
+    .pathbar,.batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;background:rgba(15,23,42,0.8);backdrop-filter:blur(12px);padding:8px}
     .pathbar input{flex:1;min-width:200px}
+    .preset-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+    .preset-row select{flex:1}
+    .preset-row button{white-space:nowrap}
     .filters{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:14px 0 10px}
     .filter-left,.filter-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
     .check{display:flex;align-items:center;gap:7px;color:var(--ink-muted);font-size:12px}
@@ -50,23 +65,22 @@
     .metric{color:var(--ink-faint);font:500 11px/16px "JetBrains Mono",ui-monospace,monospace}
     .metric b{color:var(--primary-light)}
     .accent{color:#a5b4fc}.warning{color:#fcd34d}.danger{color:#f87171}
-    .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
-    .card{min-width:0;padding:10px;border:1px solid var(--line);border-radius:8px;background:rgba(15,23,42,0.8);backdrop-filter:blur(12px);transition:border-color .15s}
-    .card:hover{border-color:rgba(99,102,241,0.4)}
-    .card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px}
-    .card-title{font-family:Geist,Inter,sans-serif;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .card-info{color:var(--ink-faint);font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;margin-top:3px}
-    .thumb{min-height:120px;border:1px solid var(--line);border-radius:4px;background:var(--lowest);overflow:hidden;position:relative;margin-bottom:8px}
-    .thumb img{display:block;width:100%;height:auto}
-    .type-label{position:absolute;left:8px;bottom:8px;border:1px solid var(--line-strong);border-radius:3px;background:rgba(10,14,23,0.85);padding:2px 6px;color:var(--ink-muted);font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase}
-    .state{border:1px solid var(--line-strong);border-radius:3px;background:rgba(255,255,255,0.05);padding:2px 6px;color:var(--ink-muted);font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
+    #cards{display:flex;flex-direction:column;gap:8px}
+    .empty{border:1px dashed var(--line-strong);border-radius:8px;padding:30px 20px;text-align:center;color:var(--ink-faint);font-size:12px}
+    .staging-row{border:1px solid var(--line);border-radius:8px;background:rgba(15,23,42,0.8);backdrop-filter:blur(12px);padding:10px;transition:border-color .15s}
+    .staging-row:hover{border-color:rgba(99,102,241,0.4)}
+    .staging-row-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+    .staging-row-title{font-family:Geist,Inter,sans-serif;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .staging-row-meta{color:var(--ink-faint);font:600 9px/13px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;margin-top:2px}
+    .staging-row-path{color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 10px/14px "JetBrains Mono",ui-monospace,monospace;margin-bottom:6px}
+    .state{display:inline-flex;align-items:center;border:1px solid var(--line-strong);border-radius:3px;background:rgba(255,255,255,0.05);padding:2px 6px;color:var(--ink-muted);font:600 10px/14px "JetBrains Mono",ui-monospace,monospace;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap}
     .state.ready{border-color:rgba(16,185,129,0.35);background:rgba(16,185,129,0.12);color:#6ee7b7}
     .state.error{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.12);color:#f87171}
-    .rename-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-top:8px}
-    .rename-row input{min-width:0;font:500 12px/16px "JetBrains Mono",ui-monospace,monospace;padding:7px 10px}
+    .staging-row-rename{display:grid;grid-template-columns:1fr auto;gap:6px}
+    .staging-row-rename input{min-width:0;font:500 11px/15px "JetBrains Mono",ui-monospace,monospace;padding:5px 8px}
+    .staging-row-rename button{padding:5px 8px;font-size:11px}
     .original{color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 11px/16px "JetBrains Mono",ui-monospace,monospace}
-    .card-error{color:#f87171;font:400 11px/16px Inter,sans-serif;margin-top:8px}
-    .empty{grid-column:1/-1;border:1px dashed var(--line-strong);border-radius:8px;padding:40px;text-align:center;color:var(--ink-faint);font-size:13px}
+    .card-error{color:#f87171;font:400 10px/15px Inter,sans-serif;margin-top:6px}
     .parameters{position:sticky;top:12px;height:max-content;overflow:hidden;border:1px solid var(--line);border-radius:8px;background:rgba(15,23,42,0.8);backdrop-filter:blur(12px);padding:14px}
     .parameters::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(99,102,241,0.4),transparent)}
     .param-head{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:4px}
@@ -95,110 +109,107 @@
     .modal-box{display:flex;flex-direction:column;width:min(1400px,96vw);height:min(900px,92vh);max-height:92vh;overflow:hidden;border:1px solid var(--line-strong);border-radius:12px;background:rgba(30,41,59,0.92);backdrop-filter:blur(16px);box-shadow:0 24px 48px -12px rgba(0,0,0,0.85)}
     .modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line);padding:14px}
     .modal-head strong{font-family:Geist,Inter,sans-serif;font-size:15px;font-weight:600}
-    .gallery-picker{flex:1 1 auto;width:100%;min-height:0;border:0;background:#121821;display:block}
     .modal-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;border-top:1px solid var(--line);padding:10px 14px;background:rgba(10,14,23,0.55)}
     .modal-foot[hidden]{display:none}
     .modal-foot .path{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-faint);font:500 11px/1.5 "JetBrains Mono",ui-monospace,monospace}
     .modal-foot button.primary{border-color:rgba(99,102,241,0.55);background:rgba(99,102,241,0.25);color:#fff}
     .footer-note{color:var(--ink-faint);font:400 11px/1.6 Inter,sans-serif;margin-top:12px}
-    @media(max-width:1500px){.cards{grid-template-columns:repeat(3,minmax(0,1fr))}}
-    @media(max-width:1000px){.shell{grid-template-columns:1fr}.parameters{position:static;grid-row:1}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
-    @media(max-width:620px){.shell{padding:12px}.cards{grid-template-columns:1fr}.topbar{align-items:flex-start}.parameters{padding:11px}.batchbar button{flex:1}}
+    @media(max-width:1000px){.workspace{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;overflow-y:auto}.browser-pane{height:60vh;border-left:0;border-top:1px solid var(--line)}.sidebar-pane{height:auto}.app{height:auto;overflow:visible}}
+    @media(max-width:620px){.pathbar input{min-width:0;width:100%}.provider-row{grid-template-columns:1fr 1fr}.two{grid-template-columns:1fr}.batchbar button{flex:1}.sidebar-scroll{padding:12px}}
   </style>
 </head>
 <body>
-  <main class="shell">
-    <section class="workspace" aria-label="Media rename workspace">
-      <header class="topbar">
-        <div class="brand"><span class="brand-mark" aria-hidden="true">✎</span><span>AI Renamer</span></div>
-        <span id="engine-status">Checking engine…</span>
-      </header>
-      <div class="path-label label" style="margin-top:0">Folder workspace</div>
-      <div class="pathbar">
-        <input id="folder-path" aria-label="Folder path" placeholder="/data/downloads">
-        <button id="change-folder" type="button">Browse folders &amp; images</button>
-        <button id="scan-folder" class="primary" type="button">↻ &nbsp;Scan Folder</button>
-      </div>
-      <div class="filters">
-        <div class="filter-left">
-          <label class="check"><input id="recursive" type="checkbox" checked> Recursive Subdirs</label>
-          <span id="selection-count" class="metric">Select <b>0</b> · 0 files staged</span>
-        </div>
-        <div class="filter-right">
-          <label class="check"><input id="select-all" type="checkbox"> Select All</label>
-          <span id="files-count" class="metric">0 files</span>
-        </div>
-      </div>
-      <div class="batchbar">
-        <button id="revert" class="revert" type="button" disabled>↶ &nbsp;Revert Last Batch</button>
-        <button id="dry-run" type="button" class="primary">Run Dry-Run Preview</button>
-        <button id="rename-all" type="button" class="primary" disabled>⚡ &nbsp;Batch Rename All (0)</button>
-        <div id="progress" class="progress" hidden><span id="progress-label">Analyzing…</span><span class="progress-track"><i id="progress-bar"></i></span></div>
-      </div>
-      <div id="summary" class="subtle" style="margin:0 0 10px">Choose a folder and scan it. Dry-run previews names without changing files.</div>
-      <div id="cards" class="cards"><div class="empty">Choose a folder to start staging media for AI renaming.</div></div>
-      <p class="footer-note">A dry-run never modifies files. Rename operations keep the original extension and avoid overwriting existing files. API keys are stored server-side with owner-only file permissions.</p>
-    </section>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark" aria-hidden="true">✎</span><span>AI Renamer</span></div>
+      <span id="engine-status">Checking engine…</span>
+    </header>
 
-    <aside class="parameters" aria-label="AI Renamer parameters">
-      <div class="param-head"><div><strong>☷ &nbsp;ai-renamer Parameters</strong><div class="subtitle">CLI-compatible · vision engine</div></div></div>
-      <span class="label">AI Provider (-p, --provider)</span>
-      <div class="provider-row">
-        <button type="button" data-provider="lm-studio">LM Studio</button>
-        <button type="button" data-provider="ollama">Ollama</button>
-        <button type="button" data-provider="openai">OpenAI</button>
-      </div>
-      <label class="label" for="model">Loaded Vision Model (-m, --model)</label>
-      <div class="two"><select id="model"><option value="">Choose model…</option></select><button id="load-models" type="button">Load Models</button></div>
-      <label class="label" for="base-url">Base URL (-u, --base-url)</label>
-      <div class="two"><input id="base-url" type="url" spellcheck="false"><button id="ping" type="button">● Ping</button></div>
-      <label class="label">Case Convention (-c, --case)</label>
-      <div class="provider-row" style="grid-template-columns:1fr 1fr">
-        <button type="button" data-case="kebabCase">● kebabCase</button>
-        <button type="button" data-case="camelCase">camelCase</button>
-        <button type="button" data-case="snakeCase">snake_case</button>
-        <button type="button" data-case="pascalCase">PascalCase</button>
-      </div>
-      <div class="two">
-        <div><label class="label" for="max-chars">Max Chars (-x)</label><div class="suffix"><input id="max-chars" type="number" min="1" max="180"><small>chars</small></div></div>
-        <div><label class="label" for="frames">Video Frames (-f)</label><div class="suffix"><input id="frames" type="number" min="1" max="20"><small>frames</small></div></div>
-      </div>
-      <label class="label" for="language">Target Language (-l, --language)</label>
-      <select id="language">
-        <option>English</option><option>Turkish</option><option>Spanish</option><option>French</option><option>German</option><option>Japanese</option><option>Korean</option><option>Chinese</option><option>Portuguese</option><option>Italian</option><option>Arabic</option>
-      </select>
-      <label class="label" for="api-key">API Key (OpenAI-compatible)</label>
-      <input id="api-key" type="password" autocomplete="new-password" placeholder="Optional · leave blank to keep saved key">
-      <label class="check" style="margin-top:7px"><input id="clear-api-key" type="checkbox"> Clear saved API key</label>
-      <label class="label" for="custom-prompt">Custom AI Vision Prompt (-r)</label>
-      <textarea id="custom-prompt" placeholder="Only describe the main subject, style and prominent colors. Avoid generic terms."></textarea>
-      <div class="check" style="margin-top:10px"><label class="check"><input id="settings-recursive" type="checkbox" checked> Include Subdirectories</label></div>
-      <div class="config-actions"><button id="save-settings" class="primary" type="button">Save Settings</button></div>
-      <div class="syntax">
-        <div class="syntax-head"><span>Compiled CLI Syntax</span><button id="copy-command" type="button" style="padding:3px 7px">Copy</button></div>
-        <div id="command" class="command">ai-renamer /data/downloads --provider=ollama</div>
-      </div>
-      <p class="footer-note">The provider URL must be reachable from the SDCodex backend. For Docker, use a host/LAN address reachable from the container instead of its 127.0.0.1.</p>
-    </aside>
-  </main>
-  <div id="message" class="message" role="status" hidden></div>
-  <div id="folder-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="folder-title">
-    <div class="modal-box">
-      <div class="modal-head"><strong id="folder-title">Browse folders &amp; images</strong><button id="close-folder" type="button">Close</button></div>
-      <!-- Full Gallery plugin browser (grid, folders, viewer) embedded so the
-           folder choice is made in the same UI as the Gallery space. -->
-      <iframe id="gallery-picker" class="gallery-picker" title="Browse folders and images"></iframe>
-      <div class="modal-foot" id="gallery-foot" hidden>
-        <span class="path" id="gallery-current">Gallery</span>
-        <button id="use-folder" type="button" class="primary">Use this folder</button>
-      </div>
-    </div>
+    <main class="workspace">
+      <aside class="parameters sidebar-pane" aria-label="AI Renamer parameters">
+        <div class="sidebar-scroll">
+          <div id="target-folder" class="target-line">Target · (root)</div>
+
+          <div class="param-head" style="margin-top:0;padding-top:0"><div><strong>☷ &nbsp;ai-renamer Parameters</strong><div class="subtitle">CLI-compatible · vision engine</div></div></div>
+          <span class="label">AI Provider (-p, --provider)</span>
+          <div class="provider-row">
+            <button type="button" data-provider="lm-studio">LM Studio</button>
+            <button type="button" data-provider="ollama">Ollama</button>
+            <button type="button" data-provider="openai">OpenAI</button>
+          </div>
+          <label class="label" for="model">Loaded Vision Model (-m, --model)</label>
+          <div class="two"><select id="model"><option value="">Choose model…</option></select><button id="load-models" type="button">Load Models</button></div>
+          <label class="label" for="base-url">Base URL (-u, --base-url)</label>
+          <div class="two"><input id="base-url" type="url" spellcheck="false"><button id="ping" type="button">● Ping</button></div>
+          <label class="label">Case Convention (-c, --case)</label>
+          <div class="provider-row" style="grid-template-columns:1fr 1fr">
+            <button type="button" data-case="kebabCase">● kebabCase</button>
+            <button type="button" data-case="camelCase">camelCase</button>
+            <button type="button" data-case="snakeCase">snake_case</button>
+            <button type="button" data-case="pascalCase">PascalCase</button>
+          </div>
+          <div class="two">
+            <div><label class="label" for="max-chars">Max Chars (-x)</label><div class="suffix"><input id="max-chars" type="number" min="1" max="180"><small>chars</small></div></div>
+            <div><label class="label" for="frames">Video Frames (-f)</label><div class="suffix"><input id="frames" type="number" min="1" max="20"><small>frames</small></div></div>
+          </div>
+          <label class="label" for="language">Target Language (-l, --language)</label>
+          <select id="language">
+            <option>English</option><option>Turkish</option><option>Spanish</option><option>French</option><option>German</option><option>Japanese</option><option>Korean</option><option>Chinese</option><option>Portuguese</option><option>Italian</option><option>Arabic</option>
+          </select>
+          <label class="label" for="api-key">API Key (OpenAI-compatible)</label>
+          <input id="api-key" type="password" autocomplete="new-password" placeholder="Optional · leave blank to keep saved key">
+          <label class="check" style="margin-top:7px"><input id="clear-api-key" type="checkbox"> Clear saved API key</label>
+          <label class="label" for="custom-prompt">Custom AI Vision Prompt (-r)</label>
+          <textarea id="custom-prompt" placeholder="Only describe the main subject, style and prominent colors. Avoid generic terms."></textarea>
+          <div class="preset-row">
+            <select id="saved-prompt-select"><option value="">Choose a saved prompt</option></select>
+            <button id="save-prompt-btn" type="button">Save current</button>
+            <button id="delete-prompt-btn" type="button">Delete selected</button>
+          </div>
+          <div class="check" style="margin-top:10px"><label class="check"><input id="settings-recursive" type="checkbox" checked> Include Subdirectories</label></div>
+          <div class="config-actions"><button id="save-settings" class="primary" type="button">Save Settings</button></div>
+          <div class="syntax">
+            <div class="syntax-head"><span>Compiled CLI Syntax</span><button id="copy-command" type="button" style="padding:3px 7px">Copy</button></div>
+            <div id="command" class="command">ai-renamer /data/downloads --provider=ollama</div>
+          </div>
+
+          <div class="batchbar" style="margin-top:16px">
+            <button id="revert" class="revert" type="button" disabled>↶ &nbsp;Revert Last Batch</button>
+            <button id="dry-run" type="button" class="primary">Run Dry-Run Preview</button>
+            <button id="rename-all" type="button" class="primary" disabled>⚡ &nbsp;Batch Rename All (0)</button>
+            <div id="progress" class="progress" hidden><span id="progress-label">Analyzing…</span><span class="progress-track"><i id="progress-bar"></i></span></div>
+          </div>
+
+          <div id="summary" class="subtle" style="margin:10px 0">Choose a folder and scan it. Dry-run previews names without changing files.</div>
+
+          <div class="filters">
+            <div class="filter-left">
+              <label class="check"><input id="recursive" type="checkbox" checked> Recursive Subdirs</label>
+              <span id="selection-count" class="metric">Select <b>0</b> · 0 files staged</span>
+            </div>
+            <div class="filter-right">
+              <label class="check"><input id="select-all" type="checkbox"> Select All</label>
+              <span id="files-count" class="metric">0 files</span>
+            </div>
+          </div>
+
+          <div id="cards"><div class="empty">Choose a folder to start staging media for AI renaming.</div></div>
+          <p class="footer-note">A dry-run never modifies files. Rename operations keep the original extension and avoid overwriting existing files. API keys are stored server-side with owner-only file permissions.</p>
+        </div>
+      </aside>
+
+      <section class="browser-pane" aria-label="Media browser">
+        <iframe id="renamer-browser" title="Media browser" src="/api/plugins/ai-renamer/page/browser?embed=select"></iframe>
+      </section>
+    </main>
   </div>
+
+  <div id="message" class="message" role="status" hidden></div>
   <script>
     (() => {
       const api = "/ai-renamer/api";
       const $ = (id) => document.getElementById(id);
-      const state = { files: [], selected: new Set(), jobId: "", undoToken: "", provider: "ollama", case: "kebabCase", pollTimer: 0, browseMode: "", browseRoot: "", browseTimer: 0 };
+      const state = { files: [], selected: new Set(), known: new Map(), jobId: "", undoToken: "", provider: "ollama", case: "kebabCase", pollTimer: 0, folder: "", root: "" };
       const quote = (value) => `"${String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
       const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
       const request = async (url, options = {}) => {
@@ -236,7 +247,7 @@
       }
       function syncCommand() {
         const s = currentSettings();
-        const path = $("folder-path").value || "/data/downloads";
+        const path = state.folder ? `${state.root || "/data/downloads"}/${state.folder}` : "/data/downloads";
         const parts = ["ai-renamer", quote(path), `--provider=${s.provider}`, `--base-url=${s.base_url}`, `--case=${s.case}`, `--chars=${s.max_chars}`, `--frames=${s.frames}`, `--language=${quote(s.language)}`];
         if (s.model) parts.push(`--model=${quote(s.model)}`);
         if (s.custom_prompt) parts.push(`--custom-prompt=${quote(s.custom_prompt)}`);
@@ -268,19 +279,19 @@
         if (!state.files.length) {
           const empty = document.createElement("div");
           empty.className = "empty";
-          empty.textContent = "No supported images or videos found in this folder.";
+          empty.textContent = "Nothing staged yet. Tick images in the browser on the right, or use an album\u2019s corner mark to take every file inside it.";
           cards.append(empty);
           updateCounts();
           return;
         }
         for (const file of state.files) {
           const card = document.createElement("article");
-          card.className = "card";
-          const previewUrl = queryPath("preview", { path: file.path });
+          card.className = "staging-row";
+          card.dataset.path = file.path;
           const extension = file.name.split(".").pop()?.toUpperCase() || "MEDIA";
           const stem = file.name.includes(".") ? file.name.slice(0, file.name.lastIndexOf(".")) : file.name;
           const stateLabel = file.status === "ready" ? "Ready to rename" : file.status === "renamed" ? "Renamed" : file.status === "error" ? "Error" : file.status === "pending" ? "Staged" : "Selected for rename";
-          card.innerHTML = `<div class="card-head"><label class="check" style="min-width:0"><input class="file-check" type="checkbox" ${state.selected.has(file.path) ? "checked" : ""}><span style="min-width:0"><div class="card-title">${escapeHtml(file.name)}</div><div class="card-info">${(file.size / 1048576).toFixed(1)} MB · ${extension}</div></span></label><span class="state ${file.status === "ready" || file.status === "renamed" ? "ready" : file.status === "error" ? "error" : ""}">${stateLabel}</span></div><div class="thumb"><span class="type-label">${file.kind}</span></div><div class="original" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</div><div class="rename-row"><input class="suggestion" aria-label="Suggested filename" value="${escapeHtml(file.suggested_name || stem)}" ${file.status === "renamed" ? "disabled" : ""}><button class="rename-one" type="button" ${file.status !== "ready" ? "disabled" : ""}>Rename Now</button></div>${file.error ? `<div class="card-error">${escapeHtml(file.error)}</div>` : ""}`;
+          card.innerHTML = `<div class="staging-row-head"><label class="check" style="min-width:0"><input class="file-check" type="checkbox" ${state.selected.has(file.path) ? "checked" : ""}><span style="min-width:0"><div class="staging-row-title">${escapeHtml(file.name)}</div><div class="staging-row-meta">${file.size ? `${(file.size / 1048576).toFixed(1)} MB · ` : ""}${extension}</div></span></label><span class="state ${file.status === "ready" || file.status === "renamed" ? "ready" : file.status === "error" ? "error" : ""}">${stateLabel}</span></div><div class="staging-row-path" title="${escapeHtml(file.path)}">${escapeHtml(file.path)}</div><div class="staging-row-rename"><input class="suggestion" aria-label="Suggested filename" value="${escapeHtml(file.suggested_name || stem)}" ${file.status === "renamed" ? "disabled" : ""}><button class="rename-one" type="button" ${file.status !== "ready" ? "disabled" : ""}>Rename Now</button></div>${file.error ? `<div class="card-error">${escapeHtml(file.error)}</div>` : ""}`;
           const check = card.querySelector(".file-check");
           check.addEventListener("change", () => { if (check.checked) state.selected.add(file.path); else state.selected.delete(file.path); updateCounts(); });
           card.querySelector(".suggestion").addEventListener("input", (event) => { file.suggested_name = event.target.value; });
@@ -289,16 +300,17 @@
         }
         updateCounts();
       }
-      async function scanFolder() {
-        const path = $("folder-path").value.trim();
+      async function scanFolder(path = "") {
         const recursive = $("recursive").checked;
         const result = await request(queryPath("files", { path, recursive: String(recursive) }));
+        state.folder = path;
         state.root = result.root;
         state.files = result.files.map((file) => ({ ...file, status: "selected", suggested_name: "", error: "" }));
         state.selected = new Set(state.files.map((file) => file.path));
         state.jobId = "";
         localStorage.setItem("ai-renamer.folder", path);
-        const location = `${result.root}${path && !path.startsWith("/") ? `/${path}` : ""}`;
+        $("target-folder").textContent = path || "(root)";
+        const location = `${result.root}${path ? `/${path}` : ""}`;
         $("summary").textContent = result.truncated
           ? `Showing the first ${state.files.length} supported files in ${location} — this folder holds more. Browse for a narrower folder, then stage and run a dry-run preview.`
           : `Found ${state.files.length} supported files in ${location}. Select the files to stage, then run a dry-run preview.`;
@@ -312,9 +324,10 @@
         $("max-chars").value = settings.max_chars;
         $("frames").value = settings.frames;
         $("language").value = settings.language;
-        $("custom-prompt").value = settings.custom_prompt;
+        $("custom-prompt").value = settings.custom_prompt ?? "";
         $("settings-recursive").checked = settings.include_subdirectories;
         $("recursive").checked = settings.include_subdirectories;
+        state.root = settings.root || state.root;
         if (settings.model) $("model").innerHTML = `<option value="${escapeHtml(settings.model)}">${escapeHtml(settings.model)}</option>`;
         $("api-key").placeholder = settings.api_key_set ? "Saved key present · leave blank to keep" : "Optional · enter a key when required";
         providerButtons(); caseButtons(); syncCommand();
@@ -358,7 +371,7 @@
         if (!$("model").value) throw new Error("Load models and choose a vision model first.");
         $("dry-run").disabled = true;
         try { await saveSettings(false); } catch (error) { $("dry-run").disabled = false; throw error; }
-        const folder = $("folder-path").value.trim();
+        const folder = state.folder;
         const result = await request(`${api}/dry-run`, { method: "POST", body: JSON.stringify({ files, folder, settings: currentSettings() }) });
         state.jobId = result.job_id;
         localStorage.setItem("ai-renamer.job-folder", folder);
@@ -402,8 +415,7 @@
         const folder = job.folder || localStorage.getItem("ai-renamer.job-folder") || "";
         let scanned = false;
         if (folder) {
-          $("folder-path").value = folder;
-          try { await scanFolder(); scanned = true; } catch (_) { /* folder moved or gone */ }
+          try { await scanFolder(folder); scanned = true; } catch (_) { /* folder moved or gone */ }
         }
         state.jobId = job.id;
         if (job.status === "running") {
@@ -434,7 +446,7 @@
           const result = job.items.find((item) => item.path === path);
           if (!file || !result || result.status !== "ready") continue;
           const value = file.suggested_name.trim();
-          if (!value || /[\\/\\0]/.test(value) || value === "." || value === "..") throw new Error("Suggested names must be a non-empty filename without slashes.");
+          if (!value || /[\\/\0]/.test(value) || value === "." || value === "..") throw new Error("Suggested names must be a non-empty filename without slashes.");
           result.suggested_name = value;
           edits.set(path, value);
         }
@@ -467,97 +479,91 @@
         state.undoToken = "";
         localStorage.removeItem("ai-renamer.undo-token");
         notify(`Reverted ${result.reverted.length} rename${result.reverted.length === 1 ? "" : "s"}.`);
-        await scanFolder();
+        await scanFolder(state.folder);
       }
-      // The Gallery plugin's own page is embedded as the browser: grid, folder
-      // navigation and media viewer all behave exactly like the Gallery space.
-      // The footer reads the iframe's `album` URL param to know the current
-      // folder; the shared picker stays as a fallback when the plugin's media
-      // folder lives outside the Gallery root.
-      const GALLERY_PAGE = "/api/plugins/gallery/page/gallery";
-      const GALLERY_STATUS = "/gallery/api/status";
-      const trimPath = (value) => String(value || "").replace(/\/+$/, "");
-      function pickerUrl(root) {
-        const params = new URLSearchParams({ mode: "folder" });
-        if (root) params.set("root", root);
-        return `/api/plugins/gallery/page/picker?${params.toString()}`;
+      function readPromptPresets() {
+        let presets = [];
+        try { const value = JSON.parse(localStorage.getItem("savedRenamerPrompts") || "[]"); if (Array.isArray(value)) presets = value; } catch (_) {}
+        let migrated = false;
+        presets = presets.map((entry) => {
+          if (typeof entry === "string") {
+            migrated = true;
+            const text = entry.trim();
+            return { name: text.slice(0, 60), text };
+          }
+          if (entry && typeof entry.text === "string" && entry.text.trim()) {
+            return { name: String(entry.name || "").trim() || entry.text.trim().slice(0, 60), text: entry.text };
+          }
+          migrated = true;
+          return null;
+        }).filter(Boolean);
+        if (migrated) { try { localStorage.setItem("savedRenamerPrompts", JSON.stringify(presets)); } catch (_) {} }
+        return presets;
       }
-      async function galleryRoot() {
-        try {
-          const response = await fetch(GALLERY_STATUS, { cache: "no-store", credentials: "same-origin" });
-          if (!response.ok) return "";
-          const data = await response.json();
-          return trimPath(data.root);
-        } catch (_) { return ""; }
+      function loadPromptPresets() {
+        const presets = readPromptPresets();
+        const select = $("saved-prompt-select");
+        select.innerHTML = '<option value="">Choose a saved prompt</option>' + presets.map((preset, index) => `<option value="${index}">${escapeHtml(preset.name)}</option>`).join("");
+        select.onchange = () => {
+          if (select.value !== "") {
+            const preset = presets[Number(select.value)];
+            if (preset) { $("custom-prompt").value = preset.text; syncCommand(); }
+          }
+        };
       }
-      function galleryAlbum() {
-        try {
-          const url = new URL($("gallery-picker").contentWindow.location.href);
-          return url.searchParams.get("album") || "";
-        } catch (_) { return ""; }
-      }
-      function syncGalleryPath() {
-        if (state.browseMode !== "gallery") return;
-        const album = galleryAlbum();
-        $("gallery-current").textContent = album ? `${state.browseRoot}/${album}` : state.browseRoot;
-      }
-      function closePicker() {
-        $("folder-modal").classList.remove("open");
-        if (state.browseTimer) { clearInterval(state.browseTimer); state.browseTimer = 0; }
-      }
-      async function openFolders() {
-        let folder = trimPath($("folder-path").value.trim());
-        try {
-          const current = await request(queryPath("folders", { path: $("folder-path").value.trim() }));
-          state.browseRoot = trimPath(current.root) || folder;
-          folder = folder || state.browseRoot;
-        } catch (error) {
-          state.browseRoot = folder;
+      /** A media tile was clicked in the embedded boilerplate browser. Match it
+          to a staged file when possible and scroll that row into view. */
+      function setBrowserFolder(folder) {
+        // The embedded browser owns navigation; the studio only records where
+        // the user is. Selecting files is explicit, so arriving in a folder
+        // never stages anything by itself.
+        state.folder = folder;
+        localStorage.setItem("ai-renamer.folder", folder);
+        $("target-folder").textContent = folder || "(root)";
+        if (!state.files.length) {
+          $("summary").textContent = `Browsing ${folder || "the media root"}. Tick images in the browser — or use an album\u2019s corner mark to take every file inside it.`;
         }
-        const gallery = await galleryRoot();
-        const insideGallery = gallery && (folder === gallery || folder.startsWith(`${gallery}/`));
-        if (insideGallery) {
-          state.browseMode = "gallery";
-          state.browseRoot = gallery;
-          const album = folder === gallery ? "" : folder.slice(gallery.length + 1);
-          $("gallery-picker").src = `${GALLERY_PAGE}?album=${encodeURIComponent(album)}`;
-          $("gallery-foot").hidden = false;
-        } else {
-          state.browseMode = "picker";
-          $("gallery-picker").src = pickerUrl(state.browseRoot);
-          $("gallery-foot").hidden = true;
-        }
-        $("folder-modal").classList.add("open");
-        if (state.browseTimer) { clearInterval(state.browseTimer); state.browseTimer = 0; }
-        if (state.browseMode === "gallery") {
-          syncGalleryPath();
-          state.browseTimer = setInterval(syncGalleryPath, 600);
-        }
+        syncCommand();
       }
-      function useGalleryFolder() {
-        if (state.browseMode !== "gallery") return;
-        applyPickedFolder({ path: state.browseRoot, relative: galleryAlbum() });
+      function mediaKind(name) {
+        return /\.(mp4|webm|mov|avi|mkv|wmv|flv)$/i.test(name) ? "video" : "image";
       }
-      function applyPickedFolder(data) {
-        const relative = String(data.relative || "").replace(/^\/+|\/+$/g, "");
-        const root = String(data.path || "").replace(/\/+$/, "");
-        $("folder-path").value = relative ? `${root}/${relative}` : root;
-        closePicker();
-        scanFolder().catch((error) => notify(error.message, true));
+      function applyBrowserSelection(data) {
+        const incoming = Array.isArray(data?.files) ? data.files : [];
+        const folder = typeof data?.folder === "string" ? data.folder : state.folder;
+        if (folder !== state.folder) {
+          state.folder = folder;
+          localStorage.setItem("ai-renamer.folder", folder);
+        }
+        $("target-folder").textContent = folder || "(root)";
+        const next = [];
+        const seen = new Set();
+        for (const entry of incoming) {
+          const path = typeof entry === "string" ? entry : String(entry?.path || "");
+          if (!path || seen.has(path)) continue;
+          seen.add(path);
+          // Reuse the row we already rendered so AI suggestions and inline
+          // edits survive a tick elsewhere in the browser.
+          const known = state.known.get(path);
+          if (known) { next.push(known); continue; }
+          const name = (typeof entry === "object" && entry?.name) || path.split("/").pop() || path;
+          const item = { path, name, size: 0, kind: mediaKind(name), status: "selected", suggested_name: "", error: "" };
+          state.known.set(path, item);
+          next.push(item);
+        }
+        state.files = next;
+        state.selected = new Set(next.map((file) => file.path));
+        $("summary").textContent = next.length
+          ? `${next.length} file${next.length === 1 ? "" : "s"} selected in ${folder || "the media root"}. Select more in the browser, then run a dry-run preview.`
+          : `Nothing selected in ${folder || "the media root"}. Tick images in the browser, or use an album\u2019s corner mark to take every file inside it.`;
+        renderCards();
+        syncCommand();
       }
       function bind() {
-        $("scan-folder").addEventListener("click", () => scanFolder().catch((error) => notify(error.message, true)));
-        $("change-folder").addEventListener("click", openFolders);
-        $("use-folder").addEventListener("click", useGalleryFolder);
-        $("close-folder").addEventListener("click", closePicker);
-        $("folder-modal").addEventListener("click", (event) => { if (event.target === $("folder-modal")) closePicker(); });
         window.addEventListener("message", (event) => {
           if (event.origin !== window.location.origin) return;
-          if (event.data?.type === "sdcodex:pick") applyPickedFolder(event.data);
-          if (event.data?.type === "sdcodex:pick-cancel") closePicker();
-        });
-        document.addEventListener("keydown", (event) => {
-          if (event.key === "Escape" && $("folder-modal").classList.contains("open")) closePicker();
+          if (event.data?.type === "sdcodex:renamer-folder") setBrowserFolder(String(event.data.album || ""));
+          if (event.data?.type === "sdcodex:renamer-selection") applyBrowserSelection(event.data);
         });
         $("select-all").addEventListener("change", () => { state.selected = $("select-all").checked ? new Set(state.files.map((file) => file.path)) : new Set(); renderCards(); });
         $("recursive").addEventListener("change", () => { $("settings-recursive").checked = $("recursive").checked; syncCommand(); });
@@ -571,6 +577,25 @@
         $("load-models").addEventListener("click", () => loadModels().then((models) => notify(`Loaded ${models.length} models.`)).catch((error) => notify(error.message, true)));
         $("ping").addEventListener("click", () => pingProvider().catch((error) => { $("ping").textContent = "● Ping"; notify(error.message, true); }));
         $("save-settings").addEventListener("click", () => saveSettings().catch((error) => notify(error.message, true)));
+        $("save-prompt-btn").addEventListener("click", () => {
+          const value = $("custom-prompt").value.trim(); if (!value) return;
+          const fallback = value.length > 60 ? value.slice(0, 60) + "…" : value;
+          const name = window.prompt("Name this prompt preset:", fallback);
+          if (name === null) return;
+          const label = name.trim() || fallback;
+          const presets = readPromptPresets();
+          const existing = presets.findIndex((p) => p.name.toLowerCase() === label.toLowerCase());
+          if (existing >= 0) presets[existing] = { name: label, text: value };
+          else presets.push({ name: label, text: value });
+          localStorage.setItem("savedRenamerPrompts", JSON.stringify(presets)); loadPromptPresets();
+          $("saved-prompt-select").value = String(existing >= 0 ? existing : presets.length - 1);
+        });
+        $("delete-prompt-btn").addEventListener("click", () => {
+          if ($("saved-prompt-select").value === "") return;
+          const presets = readPromptPresets();
+          presets.splice(Number($("saved-prompt-select").value), 1);
+          localStorage.setItem("savedRenamerPrompts", JSON.stringify(presets)); loadPromptPresets();
+        });
         $("dry-run").addEventListener("click", () => runDryRun().catch((error) => { $("dry-run").disabled = false; notify(error.message, true); }));
         $("rename-all").addEventListener("click", () => renameFiles(selectedFiles().map((file) => file.path)).catch((error) => notify(error.message, true)));
         $("revert").addEventListener("click", () => undo().catch((error) => notify(error.message, true)));
@@ -591,20 +616,8 @@
           $("engine-status").textContent = "API unavailable";
           notify(error.message, true);
         }
+        loadPromptPresets();
         await restoreJob();
-        // Land on the live media root (or the last folder) instead of an
-        // empty staging area; the folder browser stays available via Change.
-        if (!state.files.length && !state.jobId) {
-          const saved = localStorage.getItem("ai-renamer.folder") || "";
-          $("folder-path").value = saved;
-          try { await scanFolder(); } catch (_) { /* root unavailable */ }
-          // Nothing staged: open the Gallery plugin's browser straight away so
-          // picking a folder is the first thing you can do, like the gallery.
-          if (!state.files.length) {
-            notify("Browse folders and images to pick where your media lives.");
-            await openFolders();
-          }
-        }
       }
       init();
     })();

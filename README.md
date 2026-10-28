@@ -6,23 +6,31 @@ the resulting renames.
 
 ## Features
 
-- Folder browser and recursive media scan for common image and video formats.
+- **Built-in Gallery browser.** The right two thirds of the page are a full
+  media browser (grid, album rail, thumbnails, viewer) served by the plugin
+  itself — nothing else has to be installed.
+- **Pick files visually.** Click images to add them to the staged list, or use
+  an album's corner mark to take every file inside it, recursively. Browsing
+  never stages anything by itself, and the selection can span folders.
 - Ollama, LM Studio, and OpenAI-compatible vision providers.
 - Model discovery, configurable base URL, language, filename case, character
-  limit, video frame count, and custom prompt.
+  limit, video frame count, and custom prompt — with **saved, named prompt
+  presets** next to the prompt field.
 - Dry-run preview leaves files untouched until **Rename Now** or **Batch Rename
   All** is selected.
 - Rename operations keep the original extension and choose a numbered filename
   when a target already exists; they never intentionally overwrite a file.
 - Revert the latest rename batch while the renamed files remain in place.
-- All file operations are restricted to the configured downloads root and
-  require an authenticated SDCodex session.
+- All file operations are restricted to the configured media root and require
+  an authenticated SDCodex session.
 
 ## Install
 
 Install **AI Renamer** from SDCodex **Settings → Plugins**. The plugin declares
-`./downloads` as its default persistent media volume. Choose a folder under
-that volume in the plugin page.
+`./downloads` as its default persistent media volume (`AI_RENAMER_ROOT`, mapped
+to `/data/downloads`); set that host path to the folder holding your images and
+videos. The studio has no folder bar — it opens at that root and you browse from
+there. `GALLERY_ROOT` is used when `AI_RENAMER_ROOT` is not set.
 
 For Docker installs, set the provider URL to an address reachable from the
 container. `127.0.0.1` inside a container refers to the container itself; use a

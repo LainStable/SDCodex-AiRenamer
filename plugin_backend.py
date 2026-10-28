@@ -84,6 +84,8 @@ def handle_plugin_error(error):
 
 
 def _settings_file():
+    # Settings live with the plugin's own instance folder so an upgrade from
+    # the pre-browser release keeps the provider, model and prompt.
     folder = os.path.join(current_app.instance_path, "plugins", "ai-renamer")
     os.makedirs(folder, mode=0o700, exist_ok=True)
     return os.path.join(folder, "settings.json")
@@ -530,7 +532,9 @@ def status():
 @ai_renamer_bp.get("/settings")
 def get_settings():
     settings = _read_settings()
-    return jsonify({**settings, "api_key": "", "api_key_set": bool(settings["api_key"])})
+    # ``root`` lets the studio print the real media path in its CLI preview
+    # without listing the directory first.
+    return jsonify({**settings, "api_key": "", "api_key_set": bool(settings["api_key"]), "root": _browse_root()})
 
 
 @ai_renamer_bp.post("/settings")
